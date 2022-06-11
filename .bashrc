@@ -169,7 +169,12 @@ fi
 [[ -x "$(command -v thefuck)" ]] && eval "$(thefuck --alias)"
 
 # Load fuzzy finder
-[[ -f ~/.fzf.bash ]] && source ~/.fzf.bash
+if [[ -f ~/.fzf.bash ]] ; then
+    source ~/.fzf.bash
+else
+    [[ -f /usr/share/doc/fzf/examples/key-bindings.bash ]] && source /usr/share/doc/fzf/examples/key-bindings.bash
+    [[ -f /usr/share/doc/fzf/examples/completion.bash ]] && source /usr/share/doc/fzf/examples/completion.bash
+fi
 
 # Fix Home and End keys on Solaris
 if [[ "$OSTYPE" == "solaris"* ]] ; then
