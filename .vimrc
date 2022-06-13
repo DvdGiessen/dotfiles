@@ -99,3 +99,6 @@ if !exists(":DiffOrig")
   command DiffOrig vert new | set bt=nofile | r # | 0d_ | diffthis | wincmd p | diffthis
 endif
 
+" Load fzf plugin if we can find it
+set rtp+=/usr/local/opt/fzf
+
