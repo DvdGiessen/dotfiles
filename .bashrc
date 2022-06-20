@@ -212,5 +212,11 @@ fi
 # Use all cores by default for make builds
 [[ -x "$(command -v nproc)" ]] && export MAKEFLAGS="-j$(nproc)"
 
+# Alias for modern Docker Compose
+if type docker &>/dev/null && docker compose version &>/dev/null ; then
+    alias docker-compose="docker compose"
+fi
+
 # Dot file management
 alias dotgit="$(which git)"' --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
+
