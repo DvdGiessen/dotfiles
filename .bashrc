@@ -203,6 +203,9 @@ else
     alias ls='ls --color=auto'
 fi
 
+# Use colors in minicom
+export MINICOM='-m -c on'
+
 # Completion for our own tools
 [[ -f ~/.couplingtools-complete.bash ]] && source ~/.couplingtools-complete.bash
 
