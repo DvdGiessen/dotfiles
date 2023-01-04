@@ -172,8 +172,16 @@ fi
 if [[ -f ~/.fzf.bash ]] ; then
     source ~/.fzf.bash
 else
-    [[ -f /usr/share/doc/fzf/examples/key-bindings.bash ]] && source /usr/share/doc/fzf/examples/key-bindings.bash
-    [[ -f /usr/share/doc/fzf/examples/completion.bash ]] && source /usr/share/doc/fzf/examples/completion.bash
+    if [[ -f /usr/share/fzf/key-bindings.bash ]] ; then
+        source /usr/share/fzf/key-bindings.bash
+    elif [[ -f /usr/share/doc/fzf/examples/key-bindings.bash ]] ; then
+        source /usr/share/doc/fzf/examples/key-bindings.bash
+    fi
+    if [[ -f /usr/share/fzf/completion.bash ]] ; then
+        source /usr/share/fzf/key-bindings.bash
+    elif [[ -f /usr/share/doc/fzf/examples/completion.bash ]] ; then
+        source /usr/share/doc/fzf/examples/completion.bash
+    fi
 fi
 
 # Fix Home and End keys on Solaris
