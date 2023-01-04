@@ -228,6 +228,9 @@ if type docker &>/dev/null && docker compose version &>/dev/null ; then
     alias docker-compose="docker compose"
 fi
 
+# Use vi as an alias for vim
+[[ ! -x "$(command -v vi)" && -x "$(command -v vim)" ]] && alias vi=vim
+
 # Dot file management
 alias dotgit="$(which git)"' --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
 
