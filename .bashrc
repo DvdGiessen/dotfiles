@@ -187,6 +187,18 @@ else
     fi
 fi
 
+# Add ~/go/bin to PATH
+[[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
+
+# Load wormhole-william
+if [[ -x "$(command -v wormhole-william)" ]] ; then
+    source <(wormhole-william shell-completion bash)
+    if [[ ! -x "$(command -v wormhole)" ]] ; then
+        alias wormhole=wormhole-william
+        source <(wormhole shell-completion bash | sed 's/wormhole-william/wormhole/g')
+    fi
+fi
+
 # Fix Home and End keys on Solaris
 if [[ "$OSTYPE" == "solaris"* ]] ; then
     bind '"\e[1~": beginning-of-line'
