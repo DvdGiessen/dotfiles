@@ -23,11 +23,11 @@ if [[ "$(tty 2>/dev/null)" =~ ^/dev/term/[abcd] ]] ; then
 fi
 
 # Customize environment
-shopt -s checkwinsize cdspell extglob histappend
-export HISTSIZE=500000
-export HISTFILESIZE=1000000
+export HISTSIZE=
+export HISTFILESIZE=
 export HISTCONTROL=ignoreboth
 export HISTIGNORE='[bf]g:clear:history:ls:ls -la:pwd:exit:quit'
+shopt -s checkwinsize cdspell extglob histappend
 
 # Customize prompt
 prompt_command() {
@@ -39,6 +39,9 @@ prompt_command() {
     if [[ -n "$(jobs)" ]]; then
         BGJOBS=" (bg:\j)"
     fi
+
+    # Immediately write new history entries instead of at the end of the session
+    history -a
 
     # Determine color based on zone and user
     local NO_COLOR=""
