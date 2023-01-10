@@ -249,3 +249,10 @@ fi
 # Dot file management
 alias dotgit="$(which git)"' --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
 
+# Never run yay as root
+if [[ -x "$(command -v yay)" && "$(id -u)" == '0' ]] ; then
+    yay() {
+        echo >&2 'You should not run yay as root!'
+    }
+fi
+
