@@ -262,3 +262,6 @@ if hash yay 2>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     }
 fi
 
+# Make sure the last command we execute here is successful so we do not
+# start each session with an prompt indicating the last command failed.
+true
