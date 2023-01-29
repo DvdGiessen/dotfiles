@@ -22,6 +22,11 @@ if [[ "$(tty 2>/dev/null)" =~ ^/dev/term/[abcd] ]] ; then
     stty rows "$LINES" columns "$COLUMNS" 2>/dev/null
 fi
 
+# Detect and override unsupported terminals
+if hash tput 2>/dev/null && [[ -z "$(tput colors 2>/dev/null)" && "$TERM" =~ -(256)?color$ ]] ; then
+    export TERM=xterm
+fi
+
 # Customize environment
 export HISTSIZE=
 export HISTFILESIZE=
@@ -54,7 +59,7 @@ prompt_command() {
     local PYVENV_COLOR=""
     local BGJOBS_COLOR=""
     local DOLLAR_COLOR=""
-    if [[ -n "$(tput colors)" ]] ; then
+    if [[ -n "$(tput colors 2>/dev/null)" ]] || [[ "$TERM" == 'xterm' || "$TERM" =~ -(256)?color$ ]] ; then
         NO_COLOR="\[\e[m\]"
         if command -v zonename >/dev/null && [[ "$(zonename)" == "global" ]] ; then
             if [[ "$EUID" -eq 0 ]] ; then
