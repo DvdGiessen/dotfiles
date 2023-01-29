@@ -41,7 +41,7 @@ prompt_command() {
     # Show if we have any running jobs in the background
     # Do this before anything else, so the output from $(jobs) isn't poluted by this script
     local BGJOBS=""
-    if [[ -n "$(jobs)" ]]; then
+    if [[ -n "$(jobs)" ]] ; then
         BGJOBS=" (bg:\j)"
     fi
 
@@ -61,7 +61,7 @@ prompt_command() {
     local DOLLAR_COLOR=""
     if [[ -n "$(tput colors 2>/dev/null)" ]] || [[ "$TERM" == 'xterm' || "$TERM" =~ -(256)?color$ ]] ; then
         NO_COLOR="\[\e[m\]"
-        if command -v zonename >/dev/null && [[ "$(zonename)" == "global" ]] ; then
+        if [[ "$(zonename 2>/dev/null)" == "global" ]] ; then
             if [[ "$EUID" -eq 0 ]] ; then
                 USER_COLOR="\[\e[41;1;97m\]";
                 AT_COLOR="\[\e[41;1;97m\]";
@@ -87,7 +87,7 @@ prompt_command() {
         PYVENV_COLOR="\[\e[1;33m\]"
         BGJOBS_COLOR="\[\e[1;90m\]"
         DOLLAR_COLOR="\[\e[1;32m\]"
-        if [[ "$EXIT_STATUS" -ne 0 ]]; then
+        if [[ "$EXIT_STATUS" -ne 0 ]] ; then
             DOLLAR_COLOR="\[\e[1;31m\]"
         fi
     fi
@@ -104,7 +104,7 @@ prompt_command() {
 
     # Show versioning info in prompt
     local SCM=""
-    if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-working-tree >/dev/null 2>&1 && git rev-parse --abbrev-ref HEAD &> /dev/null ; then
+    if hash git 2>/dev/null && git rev-parse --is-inside-working-tree >/dev/null 2>&1 && git rev-parse --abbrev-ref HEAD &> /dev/null ; then
         SCM=" $SCM_COLOR<$(git rev-parse --abbrev-ref HEAD)>$NO_COLOR"
     fi
 
@@ -147,7 +147,7 @@ else
 fi
 
 # Load bash completion
-if ! shopt -oq posix; then
+if ! shopt -oq posix ; then
     if [[ -f /usr/share/bash-completion/bash_completion ]] ; then
         source /usr/share/bash-completion/bash_completion
     elif [[ -f /etc/bash_completion ]] ; then
@@ -156,25 +156,26 @@ if ! shopt -oq posix; then
 fi
 
 # Load bash completion for Homebrew
-if type brew &>/dev/null ; then
+if hash brew 2>/dev/null ; then
     HOMEBREW_PREFIX="$(brew --prefix)"
-    if [[ -r "${HOMEBREW_PREFIX}/etc/profile.d/bash_completion.sh" ]] ; then
-        source "${HOMEBREW_PREFIX}/etc/profile.d/bash_completion.sh"
+    if [[ -r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ]] ; then
+        source "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
     else
-        for COMPLETION in "${HOMEBREW_PREFIX}/etc/bash_completion.d/"* ; do
-            [[ -r "${COMPLETION}" ]] && source "${COMPLETION}"
+        for COMPLETION in "$HOMEBREW_PREFIX/etc/bash_completion.d/"* ; do
+            [[ -r "$COMPLETION" ]] && source "$COMPLETION"
         done
     fi
+    unset HOMEBREW_PREFIX
 fi
 
 # Load bash aliases
 [[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
 
 # Make less more friendly for non-text input files
-[[ -x /usr/bin/lesspipe ]] && eval "$(SHELL=/bin/sh lesspipe)"
+hash lesspipe 2>/dev/null && eval "$(SHELL=/bin/sh lesspipe)"
 
 # Load thefuck
-[[ -x "$(command -v thefuck)" ]] && eval "$(thefuck --alias)"
+hash thefuck 2>/dev/null && eval "$(thefuck --alias)"
 
 # Load fuzzy finder
 if [[ -f ~/.fzf.bash ]] ; then
@@ -196,9 +197,9 @@ fi
 [[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
 
 # Load wormhole-william
-if [[ -x "$(command -v wormhole-william)" ]] ; then
+if hash wormhole-william 2>/dev/null ; then
     source <(wormhole-william shell-completion bash)
-    if [[ ! -x "$(command -v wormhole)" ]] ; then
+    if ! hash wormhole 2>/dev/null ; then
         alias wormhole=wormhole-william
         source <(wormhole shell-completion bash | sed 's/wormhole-william/wormhole/g')
     fi
@@ -216,7 +217,7 @@ if [[ "$OSTYPE" == "darwin"* ]] ; then
 fi
 
 # Load color scheme for ls
-if [[ -x /usr/bin/dircolors ]]; then
+if hash dircolors 2>/dev/null ; then
     if [[ -r ~/.dircolors ]] ; then
         eval "$(dircolors -b ~/.dircolors)"
     else
@@ -241,7 +242,7 @@ export MINICOM='-m -c on'
 [[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
 
 # Use all cores by default for make builds
-[[ -x "$(command -v nproc)" ]] && export MAKEFLAGS="-j$(nproc)"
+hash nproc 2>/dev/null && export MAKEFLAGS="-j$(nproc)"
 
 # Alias for modern Docker Compose
 if type docker &>/dev/null && docker compose version &>/dev/null ; then
@@ -249,13 +250,13 @@ if type docker &>/dev/null && docker compose version &>/dev/null ; then
 fi
 
 # Use vi as an alias for vim
-[[ ! -x "$(command -v vi)" && -x "$(command -v vim)" ]] && alias vi=vim
+! hash vi 2>/dev/null && hash vim 2>/dev/null && alias vi=vim
 
 # Dot file management
-alias dotgit="$(which git)"' --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
+hash git 2>/dev/null && [[ -d "$HOME/.dotgit" ]] && alias dotgit='git --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
 
 # Never run yay as root
-if [[ -x "$(command -v yay)" && "$(id -u)" == '0' ]] ; then
+if hash yay 2>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     yay() {
         echo >&2 'You should not run yay as root!'
     }
