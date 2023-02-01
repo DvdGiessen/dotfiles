@@ -134,7 +134,7 @@ prompt_command() {
 export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
 
-# The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling it
+# The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling them
 if [[ "$OSTYPE" == "solaris"* ]] ; then
     # Korn (ksh)
     alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(hostname): \\\${PWD/~(El)\\\${HOME}/\\\~}\\\" && [[ \\\"\\\$LOGNAME\\\" == 'root' ]] && print -n '# ' || print -n '$ ')\" sh"
@@ -145,6 +145,7 @@ else
     # Debian Almquist (dash)
     alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(hostname): \\\${PWD}\\\" && \\\$(which test) \\\"\\\${LOGNAME}\\\" == 'root' && echo -n '# ' || echo -n '$ ')\" sh"
 fi
+alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
 
 # Load bash completion
 if ! shopt -oq posix ; then
