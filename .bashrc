@@ -224,6 +224,32 @@ elif hash vi &>/dev/null ; then
     export EDITOR=vi
 fi
 
+# Set up GnuPG
+if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
+    # Only run a local agent if no GPG agent is being forwarded
+    if ! lsof -a -U -F c -- "$(gpgconf --list-dir agent-socket)" 2>/dev/null | grep -q ' ^csshd' &>/dev/null ; then
+        # Ensure socket directories exist
+        if [[ ! -d "$(gpgconf --list-dirs socketdir)" ]] && ! echo "$(gpgconf --list-dirs socketdir)" | grep -qE '^(/var)?/run/user/' ; then
+            gpgconf --create-socketdir
+        fi
+
+        # Ensure a local agent is running
+        gpgconf --launch gpg-agent
+
+        # Configure GPG terminal
+        if [[ -z "$GPG_TTY" ]] ; then
+            export GPG_TTY="$(tty)"
+        elif [[ ! -c "$GPG_TTY" ]] ; then
+            echo UPDATESTARTUPTTY | gpg-connect-agent &>/dev/null
+        fi
+
+        # Set up SSH agent support
+        if [[ -z "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
+            export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+        fi
+    fi
+fi
+
 # Set up default locale
 [[ -n "$LC_ALL" ]] || export LC_ALL=en_US.UTF-8
 [[ -n "$LANG" ]] || export LANG=en_US.UTF-8
