@@ -224,6 +224,10 @@ elif hash vi &>/dev/null ; then
     export EDITOR=vi
 fi
 
+# Set up default locale
+[[ -n "$LC_ALL" ]] || export LC_ALL=en_US.UTF-8
+[[ -n "$LANG" ]] || export LANG=en_US.UTF-8
+
 # Load color scheme for ls
 if hash dircolors &>/dev/null ; then
     if [[ -r ~/.dircolors ]] ; then
