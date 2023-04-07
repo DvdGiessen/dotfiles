@@ -19,11 +19,11 @@ if [[ "$(tty 2>/dev/null)" =~ ^/dev/term/[abcd] ]] ; then
         export COLUMNS=80
     fi
     unset MT_OUTPUT
-    stty rows "$LINES" columns "$COLUMNS" 2>/dev/null
+    stty rows "$LINES" columns "$COLUMNS" &>/dev/null
 fi
 
 # Detect and override unsupported terminals
-if hash tput 2>/dev/null && [[ -z "$(tput colors 2>/dev/null)" && "$TERM" =~ -(256)?color$ ]] ; then
+if hash tput &>/dev/null && [[ -z "$(tput colors 2>/dev/null)" && "$TERM" =~ -(256)?color$ ]] ; then
     export TERM=xterm
 fi
 
@@ -104,7 +104,7 @@ prompt_command() {
 
     # Show versioning info in prompt
     local SCM=""
-    if hash git 2>/dev/null && git rev-parse --is-inside-working-tree >/dev/null 2>&1 && git rev-parse --abbrev-ref HEAD &> /dev/null ; then
+    if hash git &>/dev/null && git rev-parse --is-inside-working-tree &>/dev/null && git rev-parse --abbrev-ref HEAD &>/dev/null ; then
         SCM=" $SCM_COLOR<$(git rev-parse --abbrev-ref HEAD)>$NO_COLOR"
     fi
 
@@ -157,7 +157,7 @@ if ! shopt -oq posix ; then
 fi
 
 # Load bash completion for Homebrew
-if hash brew 2>/dev/null ; then
+if hash brew &>/dev/null ; then
     HOMEBREW_PREFIX="$(brew --prefix)"
     if [[ -r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ]] ; then
         source "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
@@ -173,10 +173,10 @@ fi
 [[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
 
 # Make less more friendly for non-text input files
-hash lesspipe 2>/dev/null && eval "$(SHELL=/bin/sh lesspipe)"
+hash lesspipe &>/dev/null && eval "$(SHELL=/bin/sh lesspipe)"
 
 # Load thefuck
-hash thefuck 2>/dev/null && eval "$(thefuck --alias)"
+hash thefuck &>/dev/null && eval "$(thefuck --alias)"
 
 # Load fuzzy finder
 if [[ -f ~/.fzf.bash ]] ; then
@@ -198,9 +198,9 @@ fi
 [[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
 
 # Load wormhole-william
-if hash wormhole-william 2>/dev/null ; then
+if hash wormhole-william &>/dev/null ; then
     source <(wormhole-william shell-completion bash)
-    if ! hash wormhole 2>/dev/null ; then
+    if ! hash wormhole &>/dev/null ; then
         alias wormhole=wormhole-william
         source <(wormhole shell-completion bash | sed 's/wormhole-william/wormhole/g')
     fi
@@ -218,7 +218,7 @@ if [[ "$OSTYPE" == "darwin"* ]] ; then
 fi
 
 # Load color scheme for ls
-if hash dircolors 2>/dev/null ; then
+if hash dircolors &>/dev/null ; then
     if [[ -r ~/.dircolors ]] ; then
         eval "$(dircolors -b ~/.dircolors)"
     else
@@ -243,7 +243,7 @@ export MINICOM='-m -c on'
 [[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
 
 # Use all cores by default for make builds
-hash nproc 2>/dev/null && export MAKEFLAGS="-j$(nproc)"
+hash nproc &>/dev/null && export MAKEFLAGS="-j$(nproc)"
 
 # Alias for modern Docker Compose
 if type docker &>/dev/null && docker compose version &>/dev/null ; then
@@ -251,13 +251,13 @@ if type docker &>/dev/null && docker compose version &>/dev/null ; then
 fi
 
 # Use vi as an alias for vim
-! hash vi 2>/dev/null && hash vim 2>/dev/null && alias vi=vim
+! hash vi &>/dev/null && hash vim &>/dev/null && alias vi=vim
 
 # Dot file management
-hash git 2>/dev/null && [[ -d "$HOME/.dotgit" ]] && alias dotgit='git --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
+hash git &>/dev/null && [[ -d "$HOME/.dotgit" ]] && alias dotgit='git --git-dir="$HOME/.dotgit/" --work-tree="$HOME/"'
 
 # Never run yay as root
-if hash yay 2>/dev/null && [[ "$(id -u)" == '0' ]] ; then
+if hash yay &>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     yay() {
         echo >&2 'You should not run yay as root!'
     }
