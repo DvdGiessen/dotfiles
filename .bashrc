@@ -217,6 +217,13 @@ if [[ "$OSTYPE" == "darwin"* ]] ; then
     export BASH_SILENCE_DEPRECATION_WARNING=1
 fi
 
+# Set default editor
+if hash vim &>/dev/null ; then
+    export EDITOR=vim
+elif hash vi &>/dev/null ; then
+    export EDITOR=vi
+fi
+
 # Load color scheme for ls
 if hash dircolors &>/dev/null ; then
     if [[ -r ~/.dircolors ]] ; then
