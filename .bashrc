@@ -31,8 +31,9 @@ fi
 export HISTSIZE=
 export HISTFILESIZE=
 export HISTCONTROL=ignoreboth
-export HISTIGNORE='[bf]g:clear:history:ls:ls -la:pwd:exit:quit'
-shopt -s checkwinsize cdspell extglob histappend
+export HISTIGNORE='exit:quit'
+set -be
+shopt -s checkwinsize cdspell extglob histappend histverify lithist
 
 # Customize prompt
 prompt_command() {
@@ -229,7 +230,7 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
     # Only run a local agent if no GPG agent is being forwarded
     if ! lsof -a -U -F c -- "$(gpgconf --list-dir agent-socket)" 2>/dev/null | grep -q ' ^csshd' &>/dev/null ; then
         # Ensure socket directories exist
-        if [[ ! -d "$(gpgconf --list-dirs socketdir)" ]] && ! echo "$(gpgconf --list-dirs socketdir)" | grep -qE '^(/var)?/run/user/' ; then
+        if [[ ! -d "$(gpgconf --list-dirs socketdir)" ]] && ! gpgconf --list-dirs socketdir | grep -qE '^(/var)?/run/user/' ; then
             gpgconf --create-socketdir
         fi
 
