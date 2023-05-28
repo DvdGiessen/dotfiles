@@ -49,7 +49,7 @@ prompt_command() {
     history -a
 
     # Determine color based on zone and user
-    local NO_COLOR=""
+    local RESET_COLOR=""
     local USER_COLOR=""
     local AT_COLOR=""
     local HOST_COLOR=""
@@ -59,8 +59,8 @@ prompt_command() {
     local PYVENV_COLOR=""
     local BGJOBS_COLOR=""
     local DOLLAR_COLOR=""
-    if [[ -n "$(tput colors 2>/dev/null)" ]] || [[ "$TERM" == 'xterm' || "$TERM" =~ -(256)?color$ ]] ; then
-        NO_COLOR="\[\e[m\]"
+    if [[ -z "$NO_COLOR" && ( -n "$(tput colors 2>/dev/null)" || "$TERM" == 'xterm' || "$TERM" =~ -(256)?color$ ) ]] ; then
+        RESET_COLOR="\[\e[m\]"
         if [[ "$(zonename 2>/dev/null)" == "global" ]] ; then
             if [[ "$EUID" -eq 0 ]] ; then
                 USER_COLOR="\[\e[41;1;97m\]";
@@ -99,28 +99,28 @@ prompt_command() {
     fi
     local NOCOLOR_CHROOT="$CHROOT"
     if [[ -n "$CHROOT" ]] ; then
-        CHROOT="$CHROOT_COLOR$CHROOT$NO_COLOR"
+        CHROOT="$CHROOT_COLOR$CHROOT$RESET_COLOR"
     fi
 
     # Show versioning info in prompt
     local SCM=""
     if hash git &>/dev/null && git rev-parse --is-inside-working-tree &>/dev/null && git rev-parse --abbrev-ref HEAD &>/dev/null ; then
-        SCM=" $SCM_COLOR<$(git rev-parse --abbrev-ref HEAD)>$NO_COLOR"
+        SCM=" $SCM_COLOR<$(git rev-parse --abbrev-ref HEAD)>$RESET_COLOR"
     fi
 
     # Show current Python virtual environment
     local PYVENV=""
     if [[ -n "$VIRTUAL_ENV" ]] ; then
-        PYVENV=" $PYVENV_COLOR($(basename "$VIRTUAL_ENV"))$NO_COLOR"
+        PYVENV=" $PYVENV_COLOR($(basename "$VIRTUAL_ENV"))$RESET_COLOR"
     fi
 
     # Colorize all variables
     if [[ -n "$BGJOBS" ]] ; then
-        BGJOBS="$BGJOBS_COLOR$BGJOBS$NO_COLOR"
+        BGJOBS="$BGJOBS_COLOR$BGJOBS$RESET_COLOR"
     fi
 
     # Color the prompt based on exit status of the last command
-    local DOLLAR="$DOLLAR_COLOR\\\$$NO_COLOR"
+    local DOLLAR="$DOLLAR_COLOR\\\$$RESET_COLOR"
 
     # If this is an xterm also set the title
     local TITLE=""
@@ -129,7 +129,7 @@ prompt_command() {
     fi
 
     # Putting it all together
-    export PS1="$TITLE$USER_COLOR\u$AT_COLOR@$HOST_COLOR\H$NO_COLOR: $CHROOT$DIR_COLOR\w$NO_COLOR$SCM$PYVENV\n$DOLLAR$BGJOBS "
+    export PS1="$TITLE$USER_COLOR\u$AT_COLOR@$HOST_COLOR\H$RESET_COLOR: $CHROOT$DIR_COLOR\w$RESET_COLOR$SCM$PYVENV\n$DOLLAR$BGJOBS "
 }
 export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
