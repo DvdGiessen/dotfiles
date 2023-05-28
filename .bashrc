@@ -202,7 +202,7 @@ if hash wormhole-william &>/dev/null ; then
     source <(wormhole-william shell-completion bash)
     if ! hash wormhole &>/dev/null ; then
         alias wormhole=wormhole-william
-        source <(wormhole shell-completion bash | sed 's/wormhole-william/wormhole/g')
+        source <(wormhole-william shell-completion bash | sed 's/wormhole-william/wormhole/g')
     fi
 fi
 
