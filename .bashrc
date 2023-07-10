@@ -234,19 +234,39 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
             gpgconf --create-socketdir
         fi
 
-        # Ensure a local agent is running
-        gpgconf --launch gpg-agent
+        # If inside WSL, try using forwarded sockets instead of running our own agents
+        if hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe ]] ; then
+            USERPROFILE="$(wslpath -a "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | sed -e 's/\r//g')" 2>/dev/null)"
 
-        # Configure GPG terminal
-        if [[ -z "$GPG_TTY" ]] ; then
-            export GPG_TTY="$(tty)"
-        elif [[ ! -c "$GPG_TTY" ]] ; then
-            echo UPDATESTARTUPTTY | gpg-connect-agent &>/dev/null
-        fi
+            # This uses https://github.com/Lexicality/wsl-relay
+            if hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
+                if [[ ! -S "$(gpgconf --list-dir agent-socket)" ]] ; then
+                    socat UNIX-LISTEN:"$(gpgconf --list-dir agent-socket)",fork EXEC:'wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
+                    disown $!
+                fi
+            fi
 
-        # Set up SSH agent support
-        if [[ -z "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
-            export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+            # This uses https://github.com/benpye/wsl-ssh-pageant
+            # Add the following shortcut to your Windows startup:
+            # C:\Windows\wsl-ssh-pageant.exe --force --systray --winssh ssh-pageant --wsl %USERPROFILE%\ssh-agent.sock
+            if [[ -z "$SSH_AUTH_SOCK" ]] && [[ -f "$USERPROFILE/ssh-agent.sock" ]] ; then
+                export SSH_AUTH_SOCK="$USERPROFILE/ssh-agent.sock"
+            fi
+        else
+            # Ensure a local agent is running
+            gpgconf --launch gpg-agent
+
+            # Configure GPG terminal
+            if [[ -z "$GPG_TTY" ]] ; then
+                export GPG_TTY="$(tty)"
+            elif [[ ! -c "$GPG_TTY" ]] ; then
+                echo UPDATESTARTUPTTY | gpg-connect-agent &>/dev/null
+            fi
+
+            # Set up SSH agent support
+            if [[ -z "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
+                export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+            fi
         fi
     fi
 fi
