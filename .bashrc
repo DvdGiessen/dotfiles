@@ -280,6 +280,16 @@ export MINICOM='-m -c on -w'
 # Add ~/.local/bin to PATH (i.e. for pipx)
 [[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
 
+# Set up the Android NDK and SDK if found
+if [[ -d "/usr/local/share/android-ndk" ]] ; then
+    [[ -z "$ANDROID_NDK_HOME" ]] && export ANDROID_NDK_HOME="/usr/local/share/android-ndk"
+    [[ -z "$ANDROID_NDK_ROOT" ]] && export ANDROID_NDK_ROOT="/usr/local/share/android-ndk"
+fi
+if [[ -d "/usr/local/share/android-sdk" ]] ; then
+    [[ -z "$ANDROID_SDK_HOME" ]] && export ANDROID_SDK_HOME="/usr/local/share/android-sdk"
+    [[ -z "$ANDROID_SDK_ROOT" ]] && export ANDROID_SDK_ROOT="/usr/local/share/android-sdk"
+fi
+
 # Use all cores by default for make builds
 hash nproc &>/dev/null && export MAKEFLAGS="-j$(nproc)"
 
