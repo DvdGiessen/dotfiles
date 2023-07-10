@@ -32,7 +32,7 @@ export HISTSIZE=
 export HISTFILESIZE=
 export HISTCONTROL=ignoreboth
 export HISTIGNORE='exit:quit'
-set -be
+set -b
 shopt -s checkwinsize cdspell extglob histappend histverify lithist
 
 # Customize prompt
