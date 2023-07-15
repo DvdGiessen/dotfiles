@@ -23,8 +23,18 @@ if [[ "$(tty 2>/dev/null)" =~ ^/dev/term/[abcd] ]] ; then
 fi
 
 # Detect and override unsupported terminals
-if hash tput &>/dev/null && [[ -z "$(tput colors 2>/dev/null)" && "$TERM" =~ -(256)?color$ ]] ; then
-    export TERM=xterm
+if hash tput &>/dev/null ; then
+    if [[ -z "$(tput colors 2>/dev/null)" && "$TERM" =~ -(256)?color$ ]] ; then
+        export TERM=xterm
+    fi
+elif [[ -d /usr/share/terminfo && ! -f "/usr/share/terminfo/${TERM:0:1}/$TERM" ]] ; then
+    if [[ "$TERM" =~ -(256)?color$ ]] ; then
+        if [[ -f /usr/share/terminfo/x/xterm-256color ]] ; then
+            export TERM=xterm-256color
+        elif [[ -f /usr/share/terminfo/x/xterm ]] ; then
+            export TERM=xterm
+        fi
+    fi
 fi
 
 # Customize environment
