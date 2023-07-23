@@ -158,6 +158,12 @@ else
 fi
 alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
 
+# Add ~/.local/bin to PATH (i.e. for pipx)
+[[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
+
+# Add ~/go/bin to PATH
+[[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
+
 # Load bash completion
 if ! shopt -oq posix ; then
     if [[ -f /usr/share/bash-completion/bash_completion ]] ; then
@@ -204,9 +210,6 @@ else
         source /usr/share/doc/fzf/examples/completion.bash
     fi
 fi
-
-# Add ~/go/bin to PATH
-[[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
 
 # Load wormhole-william
 if hash wormhole-william &>/dev/null ; then
@@ -306,9 +309,6 @@ export MINICOM='-m -c on -w'
 
 # Completion for our own tools
 [[ -f ~/.couplingtools-complete.bash ]] && source ~/.couplingtools-complete.bash
-
-# Add ~/.local/bin to PATH (i.e. for pipx)
-[[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
 
 # Set up the Android NDK and SDK if found
 if [[ -d "/usr/local/share/android-ndk" ]] ; then
