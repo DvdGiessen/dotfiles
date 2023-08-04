@@ -6,6 +6,9 @@
 [commit]
     gpgsign = true
 
+[merge]
+    autoStash = true
+
 [pull]
     rebase = true
 
