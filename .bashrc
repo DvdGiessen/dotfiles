@@ -115,8 +115,12 @@ prompt_command() {
 
     # Show versioning info in prompt
     local SCM=""
-    if hash git &>/dev/null && git rev-parse --is-inside-working-tree &>/dev/null && git rev-parse --abbrev-ref HEAD &>/dev/null ; then
-        SCM=" $SCM_COLOR<$(git rev-parse --abbrev-ref HEAD)>$RESET_COLOR"
+    local GIT_HEAD=""
+    if hash git &>/dev/null && git rev-parse --is-inside-working-tree &>/dev/null && GIT_HEAD="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" ; then
+        if [[ "$GIT_HEAD" == "HEAD" ]] && ! GIT_HEAD="$(git describe --tags --exact-match HEAD 2>/dev/null)" ; then
+            GIT_HEAD="HEAD"
+        fi
+        SCM=" $SCM_COLOR<$GIT_HEAD>$RESET_COLOR"
     fi
 
     # Show current Python virtual environment
