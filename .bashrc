@@ -207,11 +207,19 @@ else
         source /usr/share/fzf/key-bindings.bash
     elif [[ -f /usr/share/doc/fzf/examples/key-bindings.bash ]] ; then
         source /usr/share/doc/fzf/examples/key-bindings.bash
+    elif [[ -f /usr/local/opt/fzf/shell/key-bindings.bash ]] ; then
+        source /usr/local/opt/fzf/shell/key-bindings.bash
+    elif [[ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]] ; then
+        source /opt/homebrew/opt/fzf/shell/key-bindings.bash
     fi
     if [[ -f /usr/share/fzf/completion.bash ]] ; then
         source /usr/share/fzf/key-bindings.bash
     elif [[ -f /usr/share/doc/fzf/examples/completion.bash ]] ; then
         source /usr/share/doc/fzf/examples/completion.bash
+    elif [[ -f /usr/local/opt/fzf/shell/completion.bash ]] ; then
+        source /usr/local/opt/fzf/shell/completion.bash
+    elif [[ -f /opt/homebrew/opt/fzf/shell/completion.bash ]] ; then
+        source /opt/homebrew/opt/fzf/shell/completion.bash
     fi
 fi
 
