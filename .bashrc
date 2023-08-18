@@ -162,11 +162,10 @@ else
 fi
 alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
 
-# Add ~/.local/bin to PATH (i.e. for pipx)
-[[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
-
-# Add ~/go/bin to PATH
-[[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
+# Add directories to path
+for DIR in {/usr/local,/opt/homebrew}/{sbin,bin} $HOME/{.local,.cargo,go}/bin ; do
+    [[ -d "$DIR" && ":$PATH:" != *":$DIR:"* ]] && export PATH="$PATH:$DIR"
+done
 
 # Load bash completion
 if ! shopt -oq posix ; then
