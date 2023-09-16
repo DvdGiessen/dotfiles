@@ -160,7 +160,7 @@ export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
 
 # The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling them
-if hash sh &>/dev/null && [[ "$(which sh)" != "$SHELL" ]] ; then
+if hash sh &>/dev/null && [[ "$(command -v sh)" != "$SHELL" ]] ; then
     if [[ "$OSTYPE" == "solaris"* ]] ; then
         # Korn (ksh)
         alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(cat /etc/hostname): \\\${PWD/~(El)\\\${HOME}/\\\~}\\\" && [[ \\\"\\\$LOGNAME\\\" == 'root' ]] && print -n '# ' || print -n '$ ')\" sh"
