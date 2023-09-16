@@ -245,14 +245,21 @@ else
     fi
 fi
 
-# Load wormhole-william
-if hash wormhole-william &>/dev/null ; then
-    source <(wormhole-william shell-completion bash)
-    if ! hash wormhole &>/dev/null ; then
-        alias wormhole=wormhole-william
-        source <(wormhole-william shell-completion bash | sed 's/wormhole-william/wormhole/g')
+# Load wormhole implementations
+for WORMHOLE_ALTERNATIVE in wormhole-william:shell-completion wormhole-rs:completion ; do
+    WORMHOLE_CMD="$(echo "$WORMHOLE_ALTERNATIVE" | cut -d: -f1)"
+    WORMHOLE_COMPLETION="$(echo "$WORMHOLE_ALTERNATIVE" | cut -d: -f2)"
+    if hash "$WORMHOLE_CMD" &>/dev/null ; then
+        source <("$WORMHOLE_CMD" "$WORMHOLE_COMPLETION" bash)
+        if ! hash wormhole &>/dev/null ; then
+            alias wormhole="$WORMHOLE_CMD"
+            source <("$WORMHOLE_CMD" "$WORMHOLE_COMPLETION" bash | sed "s/$WORMHOLE_CMD/wormhole/g")
+        fi
     fi
-fi
+    unset WORMHOLE_CMD
+    unset WORMHOLE_COMPLETION
+done
+unset WORMHOLE_ALTERNATIVE
 
 # Fix Home and End keys on Solaris
 if [[ "$OSTYPE" == "solaris"* ]] ; then
