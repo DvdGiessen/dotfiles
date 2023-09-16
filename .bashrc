@@ -77,7 +77,7 @@ prompt_command() {
     local PYVENV_COLOR=""
     local BGJOBS_COLOR=""
     local DOLLAR_COLOR=""
-    if [[ -z "$NO_COLOR" && ( -n "$(tput colors 2>/dev/null)" || "$TERM" == 'xterm' || "$TERM" =~ -(256)?color$ ) ]] ; then
+    if [[ -z "${NO_COLOR:-}" && ( -n "$(tput colors 2>/dev/null)" || "$TERM" == 'xterm' || "$TERM" =~ -(256)?color$ ) ]] ; then
         RESET_COLOR="\[\e[m\]"
         if [[ "$(zonename 2>/dev/null)" == "global" ]] ; then
             if [[ "$EUID" -eq 0 ]] ; then
