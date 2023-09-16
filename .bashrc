@@ -382,6 +382,11 @@ if hash yay &>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     }
 fi
 
+# Alias for QBS on macOS
+if ! hash qbs &>/dev/null && [[ -x /Applications/Qt\ Creator.app/Contents/MacOS/qbs ]] ; then
+    alias qbs="/Applications/Qt\ Creator.app/Contents/MacOS/qbs"
+fi
+
 # Make sure the last command we execute here is successful so we do not
 # start each session with an prompt indicating the last command failed.
 true
