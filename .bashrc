@@ -213,9 +213,13 @@ alias ls-lah='ls -lah'
 # Make less more friendly for non-text input files
 hash lesspipe &>/dev/null && eval "$(SHELL=/bin/sh lesspipe)"
 
-# Use bat as man pager if available
-if hash bat &>/dev/null ; then
-    export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+# Use bat as man pager if available and supported
+if hash man &>/dev/null ; then
+    if hash xbatman &>/dev/null ; then
+        alias man=batman
+    elif hash bat &>/dev/null && hash col &>/dev/null && [[ "$(head -c2 "$(command -v man 2>/dev/null)" 2>/dev/null)" == "#!" ]] ; then
+        export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+    fi
 fi
 
 # Load thefuck
