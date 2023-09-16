@@ -42,10 +42,10 @@ elif [[ -d /usr/share/terminfo && ! -f "/usr/share/terminfo/${TERM:0:1}/$TERM" ]
 fi
 
 # Customize environment
-export HISTSIZE=
-export HISTFILESIZE=
-export HISTCONTROL=ignoreboth
-export HISTIGNORE='exit:quit'
+HISTSIZE=
+HISTFILESIZE=
+HISTCONTROL=ignoreboth
+HISTIGNORE='exit:quit'
 set -b
 shopt -s checkwinsize cdspell extglob histappend histverify lithist
 
