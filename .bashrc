@@ -205,6 +205,11 @@ fi
 # Load bash aliases
 [[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
 
+# Aliases for common typos
+alias cd..='cd ..'
+alias ls-la='ls -la'
+alias ls-lah='ls -lah'
+
 # Make less more friendly for non-text input files
 hash lesspipe &>/dev/null && eval "$(SHELL=/bin/sh lesspipe)"
 
