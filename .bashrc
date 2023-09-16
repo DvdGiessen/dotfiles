@@ -169,7 +169,7 @@ if hash sh &>/dev/null && [[ "$(command -v sh)" != "$SHELL" ]] ; then
         alias sh="PS1=\"\\u@\\H: \\w \\$ \" sh"
     else
         # Debian Almquist (dash)
-        alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(cat /etc/hostname): \\\${PWD}\\\" && \\\$(which test) \\\"\\\${LOGNAME}\\\" == 'root' && echo -n '# ' || echo -n '$ ')\" sh"
+        alias sh="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGNAME}\\\" ] && echo \\\"\\\${LOGNAME}\\\" || whoami)@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\$([ -n \\\"\\\${HOME}\\\" ] && [ \\\"\\\${PWD}\\\" = \\\"\\\${HOME}\\\" ] && echo '~' || echo \\\"\\\${PWD}\\\")\\\" && [ \\\"\\\${LOGNAME}\\\" = 'root' ] && echo -n '# ' || echo -n '$ ')\" sh"
     fi
 fi
 hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
