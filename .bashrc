@@ -4,6 +4,10 @@
 [[ -z "$PS1" ]] && return
 [[ "$-" == *"i"* ]] || return
 
+# Disable echo while we are setting up our shell;
+# bash will echo stdin when arriving at the prompt
+stty -echo
+
 # Setup serial console size
 if [[ "$(tty 2>/dev/null)" =~ ^/dev/term/[abcd] ]] ; then
     # If we're on the serial console, we generally won't know how big our
@@ -55,6 +59,9 @@ prompt_command() {
     if [[ -n "$(jobs)" ]] ; then
         BGJOBS=" (bg:\j)"
     fi
+
+    # Make sure input ends up after the prompt, not before it
+    stty -echo
 
     # Immediately write new history entries instead of at the end of the session
     history -a
@@ -145,6 +152,9 @@ prompt_command() {
 
     # Putting it all together
     export PS1="$TITLE$USER_COLOR\u$AT_COLOR@$HOST_COLOR\H$RESET_COLOR: $CHROOT$DIR_COLOR\w$RESET_COLOR$SCM$PYVENV\n$DOLLAR$BGJOBS "
+
+    # (Re-)enable echo
+    stty echo
 }
 export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
