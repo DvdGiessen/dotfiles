@@ -178,6 +178,7 @@ hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{gre
 for DIR in {/usr/local,/opt/homebrew}/{sbin,bin} $HOME/{.local,.cargo,go}/bin ; do
     [[ -d "$DIR" && ":$PATH:" != *":$DIR:"* ]] && export PATH="$PATH:$DIR"
 done
+unset DIR
 
 # Load bash completion
 if ! shopt -oq posix ; then
