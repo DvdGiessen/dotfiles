@@ -229,24 +229,16 @@ hash thefuck &>/dev/null && eval "$(thefuck --alias)"
 if [[ -f ~/.fzf.bash ]] ; then
     source ~/.fzf.bash
 else
-    if [[ -f /usr/share/fzf/key-bindings.bash ]] ; then
-        source /usr/share/fzf/key-bindings.bash
-    elif [[ -f /usr/share/doc/fzf/examples/key-bindings.bash ]] ; then
-        source /usr/share/doc/fzf/examples/key-bindings.bash
-    elif [[ -f /usr/local/opt/fzf/shell/key-bindings.bash ]] ; then
-        source /usr/local/opt/fzf/shell/key-bindings.bash
-    elif [[ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]] ; then
-        source /opt/homebrew/opt/fzf/shell/key-bindings.bash
-    fi
-    if [[ -f /usr/share/fzf/completion.bash ]] ; then
-        source /usr/share/fzf/key-bindings.bash
-    elif [[ -f /usr/share/doc/fzf/examples/completion.bash ]] ; then
-        source /usr/share/doc/fzf/examples/completion.bash
-    elif [[ -f /usr/local/opt/fzf/shell/completion.bash ]] ; then
-        source /usr/local/opt/fzf/shell/completion.bash
-    elif [[ -f /opt/homebrew/opt/fzf/shell/completion.bash ]] ; then
-        source /opt/homebrew/opt/fzf/shell/completion.bash
-    fi
+    for FZF_SCRIPT in key-bindings.bash completion.bash ; do
+        for FZF_PREFIX in {{$PREFIX,/usr,/usr/local,/opt,/opt/local}/share/{fzf,doc/fzf/examples},{/usr/local,/opt/homebrew}/opt/fzf/shell} ; do
+            if [[ -f "${FZF_PREFIX}/${FZF_SCRIPT}" ]] ; then
+                source "${FZF_PREFIX}/${FZF_SCRIPT}"
+                break
+            fi
+        done
+        unset FZF_PREFIX
+    done
+    unset FZF_SCRIPT
 fi
 
 # Load wormhole implementations
