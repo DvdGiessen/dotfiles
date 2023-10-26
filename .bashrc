@@ -285,22 +285,42 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
         fi
 
         # If inside WSL, try using forwarded sockets instead of running our own agents
-        if hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe ]] ; then
+        if hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe && -x /mnt/c/Windows/System32/wsl.exe ]] ; then
+            WSLVERSION="$(/mnt/c/Windows/System32/wsl.exe --list --verbose | tr -d '\0\r' | awk -v wdn="$WSL_DISTRO_NAME" '$1=="*"&&$2=wdn{print $4}')"
             USERPROFILE="$(wslpath -a "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | sed -e 's/\r//g')" 2>/dev/null)"
 
-            # This uses https://github.com/Lexicality/wsl-relay
-            if hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
-                if [[ ! -S "$(gpgconf --list-dir agent-socket)" ]] ; then
-                    socat UNIX-LISTEN:"$(gpgconf --list-dir agent-socket)",fork EXEC:'wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
+            if [[ ! -S "$(gpgconf --list-dir agent-socket)" ]] ; then
+                if hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
+                    # This uses https://github.com/Lexicality/wsl-relay
+                    socat UNIX-LISTEN:"$(gpgconf --list-dir agent-socket)",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
+                    disown $!
+                elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
+                    # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
+                    socat UNIX-LISTEN:"$(gpgconf --list-dir agent-socket)",unlink-early,unlink-close,fork EXEC:"/mnt/c/Windows/wsl2-ssh-bridge.exe --gpgConfigBasepath $USERPROFILE/AppData/Local/gnupg --gpg S.gpg-agent",nofork &>/dev/null &
                     disown $!
                 fi
             fi
 
-            # This uses https://github.com/benpye/wsl-ssh-pageant
-            # Add the following shortcut to your Windows startup:
-            # C:\Windows\wsl-ssh-pageant.exe --force --systray --winssh ssh-pageant --wsl %USERPROFILE%\ssh-agent.sock
-            if [[ -z "$SSH_AUTH_SOCK" ]] && [[ -f "$USERPROFILE/ssh-agent.sock" ]] ; then
-                export SSH_AUTH_SOCK="$USERPROFILE/ssh-agent.sock"
+            if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] ; then
+                if [[ -S "$USERPROFILE/ssh-agent.sock" ]] ; then
+                    # This uses https://github.com/benpye/wsl-ssh-pageant
+                    # Add the following shortcut to your Windows startup:
+                    # C:\Windows\wsl-ssh-pageant.exe --force --systray --winssh ssh-pageant --wsl %USERPROFILE%\ssh-agent.sock
+                    if [[ "$WSLVERSION" == '1' ]] ; then
+                        # Use the socket directly
+                        export SSH_AUTH_SOCK="$USERPROFILE/ssh-agent.sock"
+                    elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
+                        # Use the socket via https://github.com/Lexicality/wsl-relay
+                        export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+                        socat UNIX-LISTEN:"$SSH_AUTH_SOCK",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes //./pipe/ssh-pageant',nofork &>/dev/null &
+                        disown $!
+                    fi
+                elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
+                    # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
+                    export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+                    socat UNIX-LISTEN:"$SSH_AUTH_SOCK",unlink-early,unlink-close,fork EXEC:/mnt/c/Windows/wsl2-ssh-bridge.exe,nofork &>/dev/null &
+                    disown $!
+                fi
             fi
         else
             # Ensure a local agent is running
