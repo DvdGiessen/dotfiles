@@ -230,7 +230,7 @@ if [[ -f ~/.fzf.bash ]] ; then
     source ~/.fzf.bash
 else
     for FZF_SCRIPT in key-bindings.bash completion.bash ; do
-        for FZF_PREFIX in {{$PREFIX,/usr,/usr/local,/opt,/opt/local}/share/{fzf,doc/fzf/examples},{/usr/local,/opt/homebrew}/opt/fzf/shell} ; do
+        for FZF_PREFIX in {$PREFIX,/usr{,/local},/opt{,/local,/homebrew}}/{opt,share{,/doc}}/fzf/{,examples,shell} ; do
             if [[ -f "${FZF_PREFIX}/${FZF_SCRIPT}" ]] ; then
                 source "${FZF_PREFIX}/${FZF_SCRIPT}"
                 break
