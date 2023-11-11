@@ -341,9 +341,13 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
     fi
 fi
 
-# Set up default locale
-[[ -n "$LC_ALL" ]] || export LC_ALL=en_US.UTF-8
-[[ -n "$LANG" ]] || export LANG=en_US.UTF-8
+# Set up preferred locale
+export LANGUAGE="en_GB:en_US:en:nl_NL:nl:C"
+if hash locale &>/dev/null ; then
+    AVAILABLE_LOCALES="$(locale -a 2>/dev/null)"
+    export LANG="$(echo "$AVAILABLE_LOCALES" | grep -i "$( { echo "$LANGUAGE" | sed -E 's/([a-zA-Z_]+)/\1.utf8:\1.utf-8/g' ; echo "$LANGUAGE" ; } | tr ':' $'\n' | grep -i -E "$(echo "$AVAILABLE_LOCALES" | sed -E 's/\./\\./g' | tr $'\n' '|' | sed -E 's/\|$/\n/')" | head -n1)" | head -n1)"
+    unset AVAILABLE_LOCALES
+fi
 
 # Load color scheme for ls
 if hash dircolors &>/dev/null ; then
