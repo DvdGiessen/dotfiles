@@ -402,6 +402,13 @@ if hash yay &>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     }
 fi
 
+# Function for sending stdin to the clipboard using a OSC52 escape sequence
+if ! hash osc52-copy &>/dev/null ; then
+    osc52-copy() {
+        printf "\x1B]52;c;$(<${1:-/dev/stdin} base64 | tr -d '\r\n')\x07"
+    }
+fi
+
 # Alias for QBS on macOS
 if ! hash qbs &>/dev/null && [[ -x /Applications/Qt\ Creator.app/Contents/MacOS/qbs ]] ; then
     alias qbs="/Applications/Qt\ Creator.app/Contents/MacOS/qbs"
