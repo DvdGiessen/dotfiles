@@ -405,7 +405,7 @@ fi
 # Function for sending stdin to the clipboard using a OSC52 escape sequence
 if ! hash osc52-copy &>/dev/null ; then
     osc52-copy() {
-        printf "\x1B]52;c;$(<${1:-/dev/stdin} base64 | tr -d '\r\n')\x07"
+        printf "\x1B]52;c;$(cat ${1:--} | base64 | tr -d '\r\n')\x07"
     }
 fi
 
