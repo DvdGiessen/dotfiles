@@ -98,61 +98,65 @@ endif
 " Load fzf plugin if we can find it
 set rtp+=/usr/local/opt/fzf
 
-" Alphabet for the base64encode() function
-let s:base64_alphabet = [
-    \ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-    \ 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-    \ 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-    \ 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-    \ 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-    \ 'o', 'p', 'q',' r', 's', 't', 'u', 'v',
-    \ 'w', 'x', 'y', 'z', '0', '1', '2', '3',
-    \ '4', '5', '6', '7', '8', '9', '+', '/' ]
+" This if will only be true when eval is supported, which is needed for defining variables and functions
+if 1
+    " Alphabet for the base64encode() function
+    let s:base64_alphabet = [
+        \ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+        \ 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+        \ 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+        \ 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+        \ 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+        \ 'o', 'p', 'q',' r', 's', 't', 'u', 'v',
+        \ 'w', 'x', 'y', 'z', '0', '1', '2', '3',
+        \ '4', '5', '6', '7', '8', '9', '+', '/' ]
 
-" Function for encoding the given text as base64
-function! s:base64encode(text)
-    let bytes = map(range(len(a:text)), 'char2nr(a:text[v:val])')
-    let base64 = []
-    for i in range(0, len(bytes) - 1, 3)
-        let n = bytes[i] * 0x10000
-            \ + get(bytes, i + 1, 0) * 0x100
-            \ + get(bytes, i + 2, 0)
-        call add(base64, s:base64_alphabet[n / 0x40000])
-        call add(base64, s:base64_alphabet[n / 0x1000 % 0x40])
-        call add(base64, s:base64_alphabet[n / 0x40 % 0x40])
-        call add(base64, s:base64_alphabet[n % 0x40])
-    endfor
-    if len(bytes) % 3 == 1
-        let base64[-1] = '='
-        let base64[-2] = '='
-    endif
-    if len(bytes) % 3 == 2
-        let base64[-1] = '='
-    endif
-    return join(base64, '')
-endfunction
+    " Function for encoding the given text as base64
+    function! s:base64encode(text)
+        let bytes = map(range(len(a:text)), 'char2nr(a:text[v:val])')
+        let base64 = []
+        for i in range(0, len(bytes) - 1, 3)
+            let n = bytes[i] * 0x10000
+                \ + get(bytes, i + 1, 0) * 0x100
+                \ + get(bytes, i + 2, 0)
+            call add(base64, s:base64_alphabet[n / 0x40000])
+            call add(base64, s:base64_alphabet[n / 0x1000 % 0x40])
+            call add(base64, s:base64_alphabet[n / 0x40 % 0x40])
+            call add(base64, s:base64_alphabet[n % 0x40])
+        endfor
+        if len(bytes) % 3 == 1
+            let base64[-1] = '='
+            let base64[-2] = '='
+        endif
+        if len(bytes) % 3 == 2
+            let base64[-1] = '='
+        endif
+        return join(base64, '')
+    endfunction
 
-" Function for sending text to the clipboard using a OSC52 escape sequence
-function! OSC52()
-    let osc52 = "\e]52;c;" . s:base64encode(@0) . "\x07"
+    " Function for sending text to the clipboard using a OSC52 escape sequence
+    function! OSC52()
+        let osc52 = "\e]52;c;" . s:base64encode(@0) . "\x07"
 
-    if has('nvim')
-        call chansend(v:stderr, osc52)
-    elseif filewritable('/dev/fd/2') == 1
-        call writefile([osc52], '/dev/fd/2', 'b')
-    else
-        exec('silent! !echo ' . shellescape(osc52))
-        redraw!
+        if has('nvim')
+            call chansend(v:stderr, osc52)
+        elseif filewritable('/dev/fd/2') == 1
+            call writefile([osc52], '/dev/fd/2', 'b')
+        else
+            exec('silent! !echo ' . shellescape(osc52))
+            redraw!
+        endif
+    endfunction
+
+    " Send yanked text to the terminal using OSC52
+    if has('autocmd')
+        augroup OSC52Yank
+            autocmd!
+            autocmd TextYankPost * if v:event.operator ==# 'y' | call OSC52() | endif
+        augroup END
     endif
-endfunction
+endif
 
 " Use the system clipboard
 set clipboard+=unnamedplus
 
-" Send yanked text to the terminal using OSC52
-if has('autocmd')
-    augroup OSC52Yank
-        autocmd!
-        autocmd TextYankPost * if v:event.operator ==# 'y' | call OSC52() | endif
-    augroup END
-endif
