@@ -284,8 +284,21 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
             gpgconf --create-socketdir &>/dev/null
         fi
 
-        # If inside WSL, try using forwarded sockets instead of running our own agents
-        if hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe && -x /mnt/c/Windows/System32/wsl.exe ]] ; then
+        # Forward to external agent on some platforms
+        if hash okc-gpg &>/dev/null && echo "$SHELL" | grep -q com.termux &>/dev/null ; then
+            # If inside Termux, use the OpenKeyChain agents
+            alias gpg=okc-gpg
+            if ! env | grep '^GIT_CONFIG_KEY_' | grep -q '=gpg.program$' &>/dev/null ; then
+                export GIT_CONFIG_KEY_${GIT_CONFIG_COUNT:-0}=gpg.program
+                export GIT_CONFIG_VALUE_${GIT_CONFIG_COUNT:-0}=okc-gpg
+                export GIT_CONFIG_COUNT=$((${GIT_CONFIG_COUNT:-0} + 1))
+            fi
+
+            if hash okc-ssh-agent &>/dev/null && [[ -z "$SSH_AUTH_SOCK" ]] ; then
+                eval "$(okc-ssh-agent 2>/dev/null)" &>/dev/null
+            fi
+        elif hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe && -x /mnt/c/Windows/System32/wsl.exe ]] ; then
+            # If inside WSL, try using forwarded sockets instead of running our own agents
             WSLVERSION="$(/mnt/c/Windows/System32/wsl.exe --list --verbose | tr -d '\0\r' | awk -v wdn="$WSL_DISTRO_NAME" '$1=="*"&&$2=wdn{print $4}')"
             USERPROFILE="$(wslpath -a "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | sed -e 's/\r//g')" 2>/dev/null)"
 
