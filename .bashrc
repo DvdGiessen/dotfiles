@@ -51,7 +51,11 @@ unset DIR
 export LANGUAGE="en_GB:en_US:en:nl_NL:nl:C"
 if hash locale &>/dev/null ; then
     AVAILABLE_LOCALES="$(locale -a 2>/dev/null)"
-    export LANG="$(echo "$AVAILABLE_LOCALES" | grep -i "$( { echo "$LANGUAGE" | sed -E 's/([a-zA-Z_]+)/\1.utf8:\1.utf-8/g' ; echo "$LANGUAGE" ; } | tr ':' $'\n' | grep -i -E "$(echo "$AVAILABLE_LOCALES" | sed -E 's/\./\\./g' | tr $'\n' '|' | sed -E 's/\|$/\n/')" | head -n1)" | head -n1)"
+    PREFERRED_AVAILABLE_LOCALES="$({ echo "$LANGUAGE" | sed -E 's/([a-zA-Z_]+)/\1.utf8:\1.utf-8/g' ; echo "$LANGUAGE" ; } | tr ':' $'\n' | grep -i -E "$(echo "$AVAILABLE_LOCALES" | sed -E 's/\./\\./g' | tr $'\n' '|' | sed -E 's/\|$/\n/')")"
+    if [[ -n "$PREFERRED_AVAILABLE_LOCALES" ]] ; then
+        export LANG="$(echo "$PREFERRED_AVAILABLE_LOCALES" | head -n1)"
+    fi
+    unset PREFERRED_AVAILABLE_LOCALES
     unset AVAILABLE_LOCALES
 fi
 
