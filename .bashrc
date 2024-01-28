@@ -41,7 +41,21 @@ elif [[ -d /usr/share/terminfo && ! -f "/usr/share/terminfo/${TERM:0:1}/$TERM" ]
     fi
 fi
 
-# Customize environment
+# Add directories to path
+for DIR in {/usr/local,/opt/homebrew}/{sbin,bin} $HOME/{.local,.cargo,go}/bin ; do
+    [[ -d "$DIR" && ":$PATH:" != *":$DIR:"* ]] && export PATH="$PATH:$DIR"
+done
+unset DIR
+
+# Set up preferred locale
+export LANGUAGE="en_GB:en_US:en:nl_NL:nl:C"
+if hash locale &>/dev/null ; then
+    AVAILABLE_LOCALES="$(locale -a 2>/dev/null)"
+    export LANG="$(echo "$AVAILABLE_LOCALES" | grep -i "$( { echo "$LANGUAGE" | sed -E 's/([a-zA-Z_]+)/\1.utf8:\1.utf-8/g' ; echo "$LANGUAGE" ; } | tr ':' $'\n' | grep -i -E "$(echo "$AVAILABLE_LOCALES" | sed -E 's/\./\\./g' | tr $'\n' '|' | sed -E 's/\|$/\n/')" | head -n1)" | head -n1)"
+    unset AVAILABLE_LOCALES
+fi
+
+# Customize bash configuration
 HISTSIZE=
 HISTFILESIZE=
 HISTCONTROL=ignoreboth
@@ -159,27 +173,6 @@ prompt_command() {
 export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
 
-# The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling them
-if hash sh &>/dev/null && [[ "$(command -v sh)" != "$SHELL" ]] ; then
-    if [[ "$OSTYPE" == "solaris"* ]] ; then
-        # Korn (ksh)
-        alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(cat /etc/hostname): \\\${PWD/~(El)\\\${HOME}/\\\~}\\\" && [[ \\\"\\\$LOGNAME\\\" == 'root' ]] && print -n '# ' || print -n '$ ')\" sh"
-    elif [[ "$OSTYPE" == "freebsd"* ]] ; then
-        # Almquist (ash)
-        alias sh="PS1=\"\\u@\\H: \\w \\$ \" sh"
-    else
-        # Debian Almquist (dash)
-        alias sh="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGNAME}\\\" ] && echo \\\"\\\${LOGNAME}\\\" || whoami)@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\$([ -n \\\"\\\${HOME}\\\" ] && [ \\\"\\\${PWD}\\\" = \\\"\\\${HOME}\\\" ] && echo '~' || echo \\\"\\\${PWD}\\\")\\\" && [ \\\"\\\${LOGNAME}\\\" = 'root' ] && echo -n '# ' || echo -n '$ ')\" sh"
-    fi
-fi
-hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
-
-# Add directories to path
-for DIR in {/usr/local,/opt/homebrew}/{sbin,bin} $HOME/{.local,.cargo,go}/bin ; do
-    [[ -d "$DIR" && ":$PATH:" != *":$DIR:"* ]] && export PATH="$PATH:$DIR"
-done
-unset DIR
-
 # Load bash completion
 if ! shopt -oq posix ; then
     if [[ -f /usr/share/bash-completion/bash_completion ]] ; then
@@ -201,6 +194,21 @@ if hash brew &>/dev/null ; then
     fi
     unset HOMEBREW_PREFIX
 fi
+
+# The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling them
+if hash sh &>/dev/null && [[ "$(command -v sh)" != "$SHELL" ]] ; then
+    if [[ "$OSTYPE" == "solaris"* ]] ; then
+        # Korn (ksh)
+        alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(cat /etc/hostname): \\\${PWD/~(El)\\\${HOME}/\\\~}\\\" && [[ \\\"\\\$LOGNAME\\\" == 'root' ]] && print -n '# ' || print -n '$ ')\" sh"
+    elif [[ "$OSTYPE" == "freebsd"* ]] ; then
+        # Almquist (ash)
+        alias sh="PS1=\"\\u@\\H: \\w \\$ \" sh"
+    else
+        # Debian Almquist (dash)
+        alias sh="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGNAME}\\\" ] && echo \\\"\\\${LOGNAME}\\\" || whoami)@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\$([ -n \\\"\\\${HOME}\\\" ] && [ \\\"\\\${PWD}\\\" = \\\"\\\${HOME}\\\" ] && echo '~' || echo \\\"\\\${PWD}\\\")\\\" && [ \\\"\\\${LOGNAME}\\\" = 'root' ] && echo -n '# ' || echo -n '$ ')\" sh"
+    fi
+fi
+hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
 
 # Load bash aliases
 [[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
@@ -352,14 +360,6 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
             fi
         fi
     fi
-fi
-
-# Set up preferred locale
-export LANGUAGE="en_GB:en_US:en:nl_NL:nl:C"
-if hash locale &>/dev/null ; then
-    AVAILABLE_LOCALES="$(locale -a 2>/dev/null)"
-    export LANG="$(echo "$AVAILABLE_LOCALES" | grep -i "$( { echo "$LANGUAGE" | sed -E 's/([a-zA-Z_]+)/\1.utf8:\1.utf-8/g' ; echo "$LANGUAGE" ; } | tr ':' $'\n' | grep -i -E "$(echo "$AVAILABLE_LOCALES" | sed -E 's/\./\\./g' | tr $'\n' '|' | sed -E 's/\|$/\n/')" | head -n1)" | head -n1)"
-    unset AVAILABLE_LOCALES
 fi
 
 # Load color scheme for ls
