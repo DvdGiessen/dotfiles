@@ -158,5 +158,5 @@ if 1
 endif
 
 " Use the system clipboard
-set clipboard+=unnamedplus
+set clipboard^=unnamed,unnamedplus
 
