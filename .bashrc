@@ -177,6 +177,12 @@ prompt_command() {
 export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
 
+# Load iTerm2 shell integration
+if [[ -f ~/.iterm2_shell_integration.bash ]] ; then
+    export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
+    source ~/.iterm2_shell_integration.bash
+fi
+
 # Load bash completion
 if ! shopt -oq posix ; then
     if [[ -f /usr/share/bash-completion/bash_completion ]] ; then
