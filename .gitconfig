@@ -1,19 +1,51 @@
 [user]
-    signingkey = 0x342CCF7EF78B7A2C
-    email = daniel@dvdgiessen.nl
     name = Daniël van de Giessen
+    email = daniel@dvdgiessen.nl
+    signingKey = 0x342CCF7EF78B7A2C
 
 [commit]
-    gpgsign = true
+    gpgSign = true
 
-[merge]
-    autoStash = true
+[tag]
+    gpgSign = true
+
+[status]
+    submoduleSummary = true
+    showStash = true
+
+[log]
+    date = iso-local
+
+[branch]
+    sort = -committerdate
+
+[diff]
+    algorithm = histogram
+    submodule = log
+    renames = copies
+
+[fetch]
+    parallel = 0
+
+[transfer]
+    fsckObjects = true
 
 [pull]
     rebase = true
 
-[rebase]
+[push]
+    autoSetupRemote = true
+    followTags = true
+
+[merge]
     autoStash = true
+    conflictStyle = zdiff3
+
+[rebase]
+    abbreviateCommands = true
+    autoStash = true
+    autoSquash = true
+    updateRefs = true
 
 [rerere]
     enabled = true
