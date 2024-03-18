@@ -155,8 +155,8 @@ if 1
             autocmd TextYankPost * if v:event.operator ==# 'y' | call OSC52() | endif
         augroup END
     endif
+else
+    " Use the system clipboard as fallback when we cannot set up OSC52
+    set clipboard^=unnamed,unnamedplus
 endif
-
-" Use the system clipboard
-set clipboard^=unnamed,unnamedplus
 
