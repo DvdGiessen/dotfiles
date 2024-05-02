@@ -312,7 +312,7 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
                 export GIT_CONFIG_COUNT=$((${GIT_CONFIG_COUNT:-0} + 1))
             fi
 
-            if hash okc-ssh-agent &>/dev/null && [[ -z "$SSH_AUTH_SOCK" ]] ; then
+            if hash okc-ssh-agent &>/dev/null && [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] ; then
                 eval "$(okc-ssh-agent 2>/dev/null)" &>/dev/null
             fi
         elif hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe && -x /mnt/c/Windows/System32/wsl.exe ]] ; then
@@ -364,7 +364,7 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
                 fi
 
                 # Set up SSH agent support
-                if [[ -z "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
+                if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
                     export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
                 fi
             fi
