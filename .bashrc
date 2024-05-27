@@ -427,9 +427,25 @@ fi
 
 # Function for sending stdin to the clipboard using a OSC52 escape sequence
 if ! hash osc52-copy &>/dev/null ; then
-    osc52-copy() {
-        printf "\x1B]52;c;$(cat ${1:--} | base64 | tr -d '\r\n')\x07"
-    }
+    if hash base64 &>/dev/null ; then
+        osc52-copy() {
+            printf "\x1B]52;c;"
+            cat "${1:--}" | base64 | tr -d '\r\n'
+            printf "\x07"
+        }
+    elif hash uuencode &>/dev/null ; then
+        osc52-copy() {
+            printf "\x1B]52;c;i"
+            cat "${1:--}" | uuencode -m - | sed '1d;$d' | tr -d '\r\n'
+            printf "\x07"
+        }
+    elif hash openssl &>/dev/null ; then
+        osc52-copy() {
+            printf "\x1B]52;c;"
+            cat "${1:--}" | openssl base64 -e | tr -d '\r\n'
+            printf "\x07"
+        }
+    fi
 fi
 
 # Alias for QBS on macOS
