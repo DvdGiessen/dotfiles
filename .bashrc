@@ -301,7 +301,7 @@ fi
 # Set up GnuPG
 if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
     # Only run a local agent if no GPG agent is being forwarded
-    if ! lsof -a -U -F c -- "$(gpgconf --list-dir agent-socket 2>/dev/null)" 2>/dev/null | grep -q '^csshd' &>/dev/null ; then
+    if ! lsof -a -U -F c -p "$(pgrep sshd | paste -sd , -)" -- "$(gpgconf --list-dir agent-socket 2>/dev/null)" 2>/dev/null | grep -q '^csshd' &>/dev/null ; then
         # Ensure socket directories exist
         if [[ ! -d "$(gpgconf --list-dirs socketdir 2>/dev/null)" ]] && ! gpgconf --list-dirs socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
             gpgconf --create-socketdir &>/dev/null
