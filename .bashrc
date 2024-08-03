@@ -178,6 +178,9 @@ prompt_command() {
 
     # (Re-)enable echo
     stty echo
+
+    # Preserve exit status
+    return $EXIT_STATUS
 }
 export -f prompt_command
 export PROMPT_COMMAND='prompt_command'
