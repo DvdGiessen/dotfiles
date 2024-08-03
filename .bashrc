@@ -393,6 +393,9 @@ else
     alias ls='ls --color=auto'
 fi
 
+# Use colors in grep
+alias grep='grep --color=auto'
+
 # Configure minicom: use Alt as Meta key, enable colors, enable linewrap
 export MINICOM='-m -c on -w'
 
