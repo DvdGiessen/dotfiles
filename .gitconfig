@@ -3,6 +3,9 @@
     email = daniel@dvdgiessen.nl
     signingKey = 0x342CCF7EF78B7A2C
 
+[init]
+    defaultBranch = main
+
 [commit]
     gpgSign = true
 
