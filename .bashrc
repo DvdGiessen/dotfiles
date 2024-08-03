@@ -60,8 +60,13 @@ if hash locale &>/dev/null ; then
 fi
 
 # Customize bash configuration
-HISTSIZE=
-HISTFILESIZE=
+if [[ "${BASH_VERSINFO:-0}" -ge 5 ]] || [[ "${BASH_VERSINFO:-0}" -eq 4 && "${BASH_VERSINFO[1]:-0}" -ge 3 ]] ; then
+    HISTSIZE=-1
+    HISTFILESIZE=-1
+else
+    HISTSIZE=
+    HISTFILESIZE=
+fi
 HISTCONTROL=ignoreboth
 HISTIGNORE='exit:quit'
 set -b
