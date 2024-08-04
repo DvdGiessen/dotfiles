@@ -434,6 +434,11 @@ if hash yay &>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     }
 fi
 
+# Convert codepage 437 characters used by nethack
+if hash nethack &>/dev/null && hash luit &>/dev/null ; then
+    alias nethack="luit -encoding 'CP437' nethack"
+fi
+
 # Function for sending stdin to the clipboard using a OSC52 escape sequence
 if ! hash osc52-copy &>/dev/null ; then
     if hash base64 &>/dev/null ; then
