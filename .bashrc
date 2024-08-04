@@ -215,11 +215,17 @@ fi
 # Detect what the default shell implementation is
 SH_IMPL=""
 if hash sh &>/dev/null ; then
+    REALPATH=''
     if hash readlink &>/dev/null ; then
-        SH_PATH="$(readlink -f -- "$(command -v sh 2>/dev/null)" 2>/dev/null)"
+        REALPATH='readlink -f --'
+    elif hash realpath &>/dev/null ; then
+        REALPATH='realpath'
+    fi
+    if [[ -n "$REALPATH" ]] ; then
+        SH_PATH="$($REALPATH "$(command -v sh 2>/dev/null)" 2>/dev/null)"
         if [[ -n "$SH_PATH" && "$SH_PATH" != "$(command -v sh 2>/dev/null)" ]] ; then
             for SH in bash ksh ksh93 ash dash zsh ; do
-                if [[ "$SH_PATH" == "$(readlink -f -- "$(command -v "$SH" 2>/dev/null)" 2>/dev/null)" ]] ; then
+                if [[ "$SH_PATH" == "$($REALPATH "$(command -v "$SH" 2>/dev/null)" 2>/dev/null)" ]] ; then
                     SH_IMPL="$SH"
                     break
                 fi
@@ -228,6 +234,7 @@ if hash sh &>/dev/null ; then
         fi
         unset SH_PATH
     fi
+    unset REALPATH
     if [[ -z "$SH_IMPL" ]] ; then
         if [[ "$OSTYPE" == "solaris"* ]] ; then
             # Korn (ksh93)
@@ -237,6 +244,8 @@ if hash sh &>/dev/null ; then
             # Note: The newline often gets stipped out by this shell, so we have an extra space to keep it readable
             alias ash='PS1="\\u@\\H: \\w '$'\n''\\$ " sh'
             SH_IMPL=ash
+        elif [[ "$OSTYPE" == "darwin"* ]] ; then
+            SH_IMPL=bash
         elif hash dash &>/dev/null ; then
             # Debian Almquist (dash)
             SH_IMPL=dash
@@ -253,7 +262,9 @@ hash dash &>/dev/null && alias dash="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGN
 hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
 
 # Apply above aliasses to the default shell too
-if [[ -n "$SH_IMPL" && "$SH_IMPL" != 'bash' && -n "${BASH_ALIASES[$SH_IMPL]}" ]] ; then
+if [[ "$SH_IMPL" == 'bash' ]] ; then
+    alias sh='PS1="\u@\H: \w\n\$ " sh'
+elif [[ -n "$SH_IMPL" && "$SH_IMPL" != 'bash' && -n "${BASH_ALIASES[$SH_IMPL]}" ]] ; then
     alias sh="$(echo "${BASH_ALIASES[$SH_IMPL]}" | sed "s/ $SH_IMPL\$/ sh/")"
 fi
 unset SH_IMPL
