@@ -212,20 +212,51 @@ if hash brew &>/dev/null ; then
     unset HOMEBREW_PREFIX
 fi
 
-# The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling them
-if hash sh &>/dev/null && [[ "$(command -v sh)" != "$SHELL" ]] ; then
-    if [[ "$OSTYPE" == "solaris"* ]] ; then
-        # Korn (ksh)
-        alias sh="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$(cat /etc/hostname): \\\${PWD/~(El)\\\${HOME}/\\\~}\\\" && [[ \\\"\\\$LOGNAME\\\" == 'root' ]] && print -n '# ' || print -n '$ ')\" sh"
-    elif [[ "$OSTYPE" == "freebsd"* ]] ; then
-        # Almquist (ash)
-        alias sh="PS1=\"\\u@\\H: \\w \\$ \" sh"
-    else
-        # Debian Almquist (dash)
-        alias sh="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGNAME}\\\" ] && echo \\\"\\\${LOGNAME}\\\" || whoami)@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\$([ -n \\\"\\\${HOME}\\\" ] && [ \\\"\\\${PWD}\\\" = \\\"\\\${HOME}\\\" ] && echo '~' || echo \\\"\\\${PWD}\\\")\\\" && [ \\\"\\\${LOGNAME}\\\" = 'root' ] && echo -n '# ' || echo -n '$ ')\" sh"
+# Detect what the default shell implementation is
+SH_IMPL=""
+if hash sh &>/dev/null ; then
+    if hash readlink &>/dev/null ; then
+        SH_PATH="$(readlink -f -- "$(command -v sh 2>/dev/null)" 2>/dev/null)"
+        if [[ -n "$SH_PATH" && "$SH_PATH" != "$(command -v sh 2>/dev/null)" ]] ; then
+            for SH in bash ksh ksh93 ash dash zsh ; do
+                if [[ "$SH_PATH" == "$(readlink -f -- "$(command -v "$SH" 2>/dev/null)" 2>/dev/null)" ]] ; then
+                    SH_IMPL="$SH"
+                    break
+                fi
+            done
+            unset SH
+        fi
+        unset SH_PATH
+    fi
+    if [[ -z "$SH_IMPL" ]] ; then
+        if [[ "$OSTYPE" == "solaris"* ]] ; then
+            # Korn (ksh93)
+            SH_IMPL=ksh
+        elif [[ "$OSTYPE" == "freebsd"* ]] ; then
+            # Almquist (ash)
+            # Note: The newline often gets stipped out by this shell, so we have an extra space to keep it readable
+            alias ash='PS1="\\u@\\H: \\w '$'\n''\\$ " sh'
+            SH_IMPL=ash
+        elif hash dash &>/dev/null ; then
+            # Debian Almquist (dash)
+            SH_IMPL=dash
+        fi
     fi
 fi
+
+# The various non-Bash shells don't not support colours and prompt commands, thus we set a simplified PS1 when calling them
+for KSH in ksh ksh93 ; do
+    hash $KSH &>/dev/null && alias $KSH="PS1=\"\\\$(echo \\\"\\\${LOGNAME}@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\${PWD/~(El)\\\${HOME}/\\\~}\\\" && [[ \\\"\\\$LOGNAME\\\" == 'root' ]] && print -n '# ' || print -n '$ ')\" $KSH"
+done
+unset KSH
+hash dash &>/dev/null && alias dash="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGNAME}\\\" ] && echo \\\"\\\${LOGNAME}\\\" || whoami)@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\$([ -n \\\"\\\${HOME}\\\" ] && [ \\\"\\\${PWD}\\\" = \\\"\\\${HOME}\\\" ] && echo '~' || echo \\\"\\\${PWD}\\\")\\\" && [ \\\"\\\${LOGNAME}\\\" = 'root' ] && echo -n '# ' || echo -n '$ ')\" dash"
 hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
+
+# Apply above aliasses to the default shell too
+if [[ -n "$SH_IMPL" && "$SH_IMPL" != 'bash' && -n "${BASH_ALIASES[$SH_IMPL]}" ]] ; then
+    alias sh="$(echo "${BASH_ALIASES[$SH_IMPL]}" | sed "s/ $SH_IMPL\$/ sh/")"
+fi
+unset SH_IMPL
 
 # Load bash aliases
 [[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
