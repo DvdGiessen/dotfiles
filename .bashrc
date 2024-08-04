@@ -174,7 +174,7 @@ prompt_command() {
     fi
 
     # Putting it all together
-    export PS1="$TITLE$USER_COLOR\u$AT_COLOR@$HOST_COLOR\H$RESET_COLOR: $CHROOT$DIR_COLOR\w$RESET_COLOR$SCM$PYVENV\n$DOLLAR$BGJOBS "
+    echo "$TITLE$USER_COLOR\u$AT_COLOR@$HOST_COLOR\H$RESET_COLOR: $CHROOT$DIR_COLOR\w$RESET_COLOR$SCM$PYVENV\n$DOLLAR$BGJOBS "
 
     # (Re-)enable echo
     stty echo
@@ -182,8 +182,7 @@ prompt_command() {
     # Preserve exit status
     return $EXIT_STATUS
 }
-export -f prompt_command
-export PROMPT_COMMAND='prompt_command'
+PROMPT_COMMAND='PS1="$(prompt_command)"'
 
 # Load iTerm2 shell integration
 if [[ -f ~/.iterm2_shell_integration.bash ]] ; then
