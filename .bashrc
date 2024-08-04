@@ -260,11 +260,10 @@ done
 unset KSH
 hash dash &>/dev/null && alias dash="PS1=\"\\\$(echo \\\"\\\$([ -n \\\"\\\${LOGNAME}\\\" ] && echo \\\"\\\${LOGNAME}\\\" || whoami)@\\\$([ -r /etc/hostname ] && cat /etc/hostname || hostname): \\\$([ -n \\\"\\\${HOME}\\\" ] && [ \\\"\\\${PWD}\\\" = \\\"\\\${HOME}\\\" ] && echo '~' || echo \\\"\\\${PWD}\\\")\\\" && [ \\\"\\\${LOGNAME}\\\" = 'root' ] && echo -n '# ' || echo -n '$ ')\" dash"
 hash zsh &>/dev/null && alias zsh="PS1=\"%B%(!.%F{red}.%F{green})%n%f%b@%B%F{green}%M%f%b: %B%F{blue}%~%f%b"$'\n'"%B%(?.%F{green}.%F{red})%#%f%b \" zsh"
+hash bash &>/dev/null && alias bash='PS1="\u@\H: \w\n\$ " bash'
 
 # Apply above aliasses to the default shell too
-if [[ "$SH_IMPL" == 'bash' ]] ; then
-    alias sh='PS1="\u@\H: \w\n\$ " sh'
-elif [[ -n "$SH_IMPL" && "$SH_IMPL" != 'bash' && -n "${BASH_ALIASES[$SH_IMPL]}" ]] ; then
+if [[ -n "$SH_IMPL" && -n "${BASH_ALIASES[$SH_IMPL]}" ]] ; then
     alias sh="$(echo "${BASH_ALIASES[$SH_IMPL]}" | sed "s/ $SH_IMPL\$/ sh/")"
 fi
 unset SH_IMPL
