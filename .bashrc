@@ -302,8 +302,9 @@ fi
 
 # Set up GnuPG
 if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
-    # Only run a local agent if no GPG agent is being forwarded
-    if ! lsof -a -U -F c -p "$(ps -Ao pid=,comm= | awk '$2 ~ /sshd/ { print $1 }' | paste -sd , -)" -- "$(gpgconf --list-dir agent-socket 2>/dev/null)" 2>/dev/null | grep -q '^csshd' &>/dev/null ; then
+    # Only configure local agent if no GPG agent is being forwarded via SSH
+    SSHD_PIDS="$(ps -Ao pid=,comm= | awk '$2 ~ /sshd/ { print $1 }' | paste -sd , -)"
+    if [[ -z "$SSHD_PIDS" ]] || ! lsof -a -U -F c -p "$SSHD_PIDS" -- "$(gpgconf --list-dir agent-socket 2>/dev/null)" 2>/dev/null | grep -q '^csshd' &>/dev/null ; then
         # Ensure socket directories exist
         if [[ ! -d "$(gpgconf --list-dirs socketdir 2>/dev/null)" ]] && ! gpgconf --list-dirs socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
             gpgconf --create-socketdir &>/dev/null
@@ -361,22 +362,20 @@ if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
                 fi
             fi
         else
-            # Ensure a local agent is running
-            if gpgconf --launch gpg-agent &>/dev/null ; then
-                # Configure GPG terminal
-                if [[ -z "$GPG_TTY" ]] ; then
-                    export GPG_TTY="$(tty)"
-                elif [[ ! -c "$GPG_TTY" ]] ; then
-                    echo UPDATESTARTUPTTY | gpg-connect-agent &>/dev/null
-                fi
+            # Configure terminal GPG uses by default
+            export GPG_TTY="$(tty)"
 
-                # Set up SSH agent support
-                if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
-                    export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
-                fi
+            # Ensure a local agent is running and update its default terminal
+            gpg-connect-agent UPDATESTARTUPTTY /bye &>/dev/null &
+            disown $!
+
+            # Set up SSH agent support
+            if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
+                export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
             fi
         fi
     fi
+    unset SSHD_PIDS
 fi
 
 # Load color scheme for ls
