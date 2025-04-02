@@ -508,6 +508,18 @@ if ! hash qbs &>/dev/null && [[ -x /Applications/Qt\ Creator.app/Contents/MacOS/
     alias qbs="/Applications/Qt\ Creator.app/Contents/MacOS/qbs"
 fi
 
+# Function for live printing headers of HTTP requests/responses in a Docker container
+if hash docker ip nsenter perl tcpflow &>/dev/null ; then
+    snoop-docker-http() {
+        CONTAINER_PID="$(docker inspect --format '{{.State.Pid}}' "$1")"
+        [[ -n "$CONTAINER_PID" ]] || return 1
+        NETWORK_INTERFACE="$(grep -xl "$(sudo nsenter -t "$CONTAINER_PID" -n ip link | grep -oE 'eth0@[^:]+' | cut -df -f2)" /sys/class/net/*/ifindex)"
+        [[ -n "$NETWORK_INTERFACE" ]] || return 1
+        HTTP_VERBS="HEAD|GET|POST|PUT|PATCH|DELETE|CONNECT|OPTIONS"
+        exec sudo tcpflow -p -c -i "$(basename "$(dirname "$NETWORK_INTERFACE")")" -S enable_report=NO -e http tcp | grep -aE --line-buffered ".+($HTTP_VERBS|HTTP/[0-9.]+) |^[A-Za-z0-9-]+: " | perl -nle "BEGIN{\$|=1} { s/.*?($HTTP_VERBS|HTTP\\/[0-9.]+) /\\n\$1 /g; print }"
+    }
+fi
+
 # Make sure the last command we execute here is successful so we do not
 # start each session with an prompt indicating the last command failed.
 true
