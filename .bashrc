@@ -441,6 +441,9 @@ alias grep='grep --color=auto'
 # Configure minicom: use Alt as Meta key, enable colors, enable linewrap
 export MINICOM='-m -c on -w'
 
+# Set tilde as design sequence because the default is hard to type on some keyboards
+hash mosh &>/dev/null && export MOSH_ESCAPE_KEY="~"
+
 # Completion for our own tools
 [[ -f ~/.couplingtools-complete.bash ]] && source ~/.couplingtools-complete.bash
 
