@@ -540,6 +540,13 @@ if hash yay &>/dev/null && [[ "$(id -u)" == '0' ]] ; then
     }
 fi
 
+if ! hash lsusb &>/dev/null && hash cyme &>/dev/null ; then
+    lsusb() {
+        echo >&2 'note: using cyme to emulate lsusb'
+        cyme -l "$@"
+    }
+fi
+
 # Convert codepage 437 characters used by nethack
 if hash nethack luit &>/dev/null ; then
     alias nethack="luit -encoding 'CP437' nethack"
