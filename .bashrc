@@ -575,6 +575,15 @@ if ! hash osc52-copy &>/dev/null ; then
     fi
 fi
 
+# Function for decoding JWT's
+# From: https://prefetch.net/blog/2020/07/14/decoding-json-web-tokens-jwts-from-the-linux-command-line/
+if hash jq &>/dev/null ; then
+    jwtd() {
+        cat "${1:--}" | jq -R 'split(".") | .[0],.[1] | @base64d | fromjson'
+        echo "Signature: $(echo "${1}" | awk -F'.' '{print $3}')"
+    }
+fi
+
 # Alias for QBS on macOS
 if ! hash qbs &>/dev/null && [[ -x /Applications/Qt\ Creator.app/Contents/MacOS/qbs ]] ; then
     alias qbs="/Applications/Qt\ Creator.app/Contents/MacOS/qbs"
