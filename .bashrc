@@ -343,80 +343,142 @@ fi
 
 # Set up GnuPG
 if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
-    # Only configure local agent if no GPG agent is being forwarded via SSH
-    SSHD_PIDS="$(ps -Ao pid=,comm= | awk '$2 ~ /sshd/ { print $1 }' | paste -sd , -)"
-    if [[ -z "$SSHD_PIDS" ]] || ! lsof -a -U -F c -p "$SSHD_PIDS" -- "$(gpgconf --list-dir agent-socket 2>/dev/null)" 2>/dev/null | grep -q '^csshd' &>/dev/null ; then
-        # Ensure socket directories exist
-        if [[ ! -d "$(gpgconf --list-dirs socketdir 2>/dev/null)" ]] && ! gpgconf --list-dirs socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
-            gpgconf --create-socketdir &>/dev/null
+    # Ensure socket directories exist
+    if [[ ! -d "$(gpgconf -L socketdir 2>/dev/null)" ]] && ! gpgconf -L socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
+        gpgconf --create-socketdir &>/dev/null
+    fi
+
+    # Forward to external agent on some platforms
+    if hash okc-gpg &>/dev/null && echo "$SHELL" | grep -q com.termux &>/dev/null ; then
+        # If inside Termux, use the OpenKeyChain agents
+        alias gpg=okc-gpg
+        if ! env | grep '^GIT_CONFIG_KEY_' | grep -q '=gpg.program$' &>/dev/null ; then
+            export GIT_CONFIG_KEY_${GIT_CONFIG_COUNT:-0}=gpg.program
+            export GIT_CONFIG_VALUE_${GIT_CONFIG_COUNT:-0}=okc-gpg
+            export GIT_CONFIG_COUNT=$((${GIT_CONFIG_COUNT:-0} + 1))
         fi
 
-        # Forward to external agent on some platforms
-        if hash okc-gpg &>/dev/null && echo "$SHELL" | grep -q com.termux &>/dev/null ; then
-            # If inside Termux, use the OpenKeyChain agents
-            alias gpg=okc-gpg
-            if ! env | grep '^GIT_CONFIG_KEY_' | grep -q '=gpg.program$' &>/dev/null ; then
-                export GIT_CONFIG_KEY_${GIT_CONFIG_COUNT:-0}=gpg.program
-                export GIT_CONFIG_VALUE_${GIT_CONFIG_COUNT:-0}=okc-gpg
-                export GIT_CONFIG_COUNT=$((${GIT_CONFIG_COUNT:-0} + 1))
-            fi
+        if hash okc-ssh-agent &>/dev/null && [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] ; then
+            eval "$(okc-ssh-agent 2>/dev/null)" &>/dev/null
+        fi
+    elif hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe && -x /mnt/c/Windows/System32/wsl.exe ]] ; then
+        # If inside WSL, try using forwarded sockets instead of running our own agents
+        WSLVERSION="$(/mnt/c/Windows/System32/wsl.exe --list --verbose | tr -d '\0\r' | awk -v wdn="$WSL_DISTRO_NAME" '$1=="*"&&$2=wdn{print $4}')"
+        USERPROFILE="$(wslpath -a "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | sed -e 's/\r//g')" 2>/dev/null)"
 
-            if hash okc-ssh-agent &>/dev/null && [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] ; then
-                eval "$(okc-ssh-agent 2>/dev/null)" &>/dev/null
+        if [[ ! -S "$(gpgconf -L agent-socket)" ]] ; then
+            if hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
+                # This uses https://github.com/Lexicality/wsl-relay
+                socat UNIX-LISTEN:"$(gpgconf -L agent-socket)",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
+                disown $!
+            elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
+                # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
+                socat UNIX-LISTEN:"$(gpgconf -L agent-socket)",unlink-early,unlink-close,fork EXEC:"/mnt/c/Windows/wsl2-ssh-bridge.exe --gpgConfigBasepath $USERPROFILE/AppData/Local/gnupg --gpg S.gpg-agent",nofork &>/dev/null &
+                disown $!
             fi
-        elif hash wslpath &>/dev/null && [[ -x /mnt/c/Windows/System32/cmd.exe && -x /mnt/c/Windows/System32/wsl.exe ]] ; then
-            # If inside WSL, try using forwarded sockets instead of running our own agents
-            WSLVERSION="$(/mnt/c/Windows/System32/wsl.exe --list --verbose | tr -d '\0\r' | awk -v wdn="$WSL_DISTRO_NAME" '$1=="*"&&$2=wdn{print $4}')"
-            USERPROFILE="$(wslpath -a "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | sed -e 's/\r//g')" 2>/dev/null)"
+        fi
 
-            if [[ ! -S "$(gpgconf --list-dir agent-socket)" ]] ; then
-                if hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
-                    # This uses https://github.com/Lexicality/wsl-relay
-                    socat UNIX-LISTEN:"$(gpgconf --list-dir agent-socket)",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
-                    disown $!
-                elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
-                    # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
-                    socat UNIX-LISTEN:"$(gpgconf --list-dir agent-socket)",unlink-early,unlink-close,fork EXEC:"/mnt/c/Windows/wsl2-ssh-bridge.exe --gpgConfigBasepath $USERPROFILE/AppData/Local/gnupg --gpg S.gpg-agent",nofork &>/dev/null &
-                    disown $!
-                fi
-            fi
-
-            if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] ; then
-                if [[ -S "$USERPROFILE/ssh-agent.sock" ]] ; then
-                    # This uses https://github.com/benpye/wsl-ssh-pageant
-                    # Add the following shortcut to your Windows startup:
-                    # C:\Windows\wsl-ssh-pageant.exe --force --systray --winssh ssh-pageant --wsl %USERPROFILE%\ssh-agent.sock
-                    if [[ "$WSLVERSION" == '1' ]] ; then
-                        # Use the socket directly
-                        export SSH_AUTH_SOCK="$USERPROFILE/ssh-agent.sock"
-                    elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
-                        # Use the socket via https://github.com/Lexicality/wsl-relay
-                        export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
-                        socat UNIX-LISTEN:"$SSH_AUTH_SOCK",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes //./pipe/ssh-pageant',nofork &>/dev/null &
-                        disown $!
-                    fi
-                elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
-                    # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
+        if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] ; then
+            if [[ -S "$USERPROFILE/ssh-agent.sock" ]] ; then
+                # This uses https://github.com/benpye/wsl-ssh-pageant
+                # Add the following shortcut to your Windows startup:
+                # C:\Windows\wsl-ssh-pageant.exe --force --systray --winssh ssh-pageant --wsl %USERPROFILE%\ssh-agent.sock
+                if [[ "$WSLVERSION" == '1' ]] ; then
+                    # Use the socket directly
+                    export SSH_AUTH_SOCK="$USERPROFILE/ssh-agent.sock"
+                elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
+                    # Use the socket via https://github.com/Lexicality/wsl-relay
                     export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
-                    socat UNIX-LISTEN:"$SSH_AUTH_SOCK",unlink-early,unlink-close,fork EXEC:/mnt/c/Windows/wsl2-ssh-bridge.exe,nofork &>/dev/null &
+                    socat UNIX-LISTEN:"$SSH_AUTH_SOCK",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes //./pipe/ssh-pageant',nofork &>/dev/null &
                     disown $!
                 fi
+            elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
+                # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
+                export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+                socat UNIX-LISTEN:"$SSH_AUTH_SOCK",unlink-early,unlink-close,fork EXEC:/mnt/c/Windows/wsl2-ssh-bridge.exe,nofork &>/dev/null &
+                disown $!
             fi
+        fi
+    else
+        FORWARDED_GNUPGHOME=""
+        FORWARDED_SOCKET="$(gpgconf -L agent-socket).forwarded"
+        if [[ -n "$SSH_AUTH_SOCK" && -S "$SSH_AUTH_SOCK" ]] && ! echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
+            # Derive a deterministic location for the forwarded GnuPG agent based on SSH_AUTH_SOCK
+            # (because that is persistent per SSH connection, also when using ControlMaster)
+            FORWARDED_GNUPGHOME="$(echo "$(dirname "$(mktemp -d -u)")/gnupg-$(echo "$SSH_AUTH_SOCK" | shasum 2>/dev/null | tr -cd 0-9a-f)")"
+        fi
+
+        if [[ -z "$GNUPGHOME" && -S "$FORWARDED_SOCKET" ]] ; then
+            # Use forwarded GnuPG socket by moving it into a new GnuPG home
+            # (to ensure it doesn't interfere with any existing sockets / systemd's socket activation)
+            if [[ -z "$FORWARDED_GNUPGHOME" ]] ; then
+                # If no deterministic path was derived, use a random one
+                FORWARDED_GNUPGHOME="$(mktemp -d -u -t gnupg-XXXXXXXXXX | sed s/-XXXXXXXXXX//)"
+            fi
+            if [[ ! -d "$FORWARDED_GNUPGHOME" ]] ; then
+                # Set up the new GnuPG by copying configuration from the default one
+                mv "$(mktemp -d)" "$FORWARDED_GNUPGHOME"
+                cp "$(gpgconf -L homedir)"/{{dirmngr,gpg,gpg-agent}.conf,pubring.kbx,trustdb.gpg} "$FORWARDED_GNUPGHOME/"
+            fi
+            export GNUPGHOME="$FORWARDED_GNUPGHOME"
+            mv "$FORWARDED_SOCKET" "$(gpgconf -L agent-socket)"
+        elif [[ -z "$GNUPGHOME" && -n "$FORWARDED_GNUPGHOME" && -d "$FORWARDED_GNUPGHOME" ]] ; then
+            # Use the previously forwarded GnuPG agent
+            export GNUPGHOME="$FORWARDED_GNUPGHOME"
         else
-            # Configure terminal GPG uses by default
+            # Configure local terminal GnuPG uses by default
             export GPG_TTY="$(tty)"
 
             # Ensure a local agent is running and update its default terminal
             gpg-connect-agent UPDATESTARTUPTTY /bye &>/dev/null &
             disown $!
+        fi
+        unset FORWARDED_GNUPGHOME
+        unset FORWARDED_SOCKET
 
-            # Set up SSH agent support
-            if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
-                export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
-            fi
+        # Set up SSH agent support
+        if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
+            export SSH_AUTH_SOCK="$(gpgconf -L agent-ssh-socket)"
         fi
     fi
-    unset SSHD_PIDS
+
+    # Alias for forwarding GnuPG over SSH, to be used in combination with above forwarding support logic
+    ssh-forward-gpg() {
+        local SSH_ARGS=()
+        local HOST=""
+        if [[ $# -le 0 ]] ; then
+            echo >&2 "Usage: $FUNCNAME [[ssh-options ...] --] hostname [command [argument ...]]"
+            return 1
+        fi
+        if [[ $# -eq 1 ]] ; then
+            HOST="$1"
+        else
+            local PREV_ARG=""
+            for ARG in "$@" ; do
+                if [[ "$PREV_ARG" == "--" ]] ; then
+                    HOST="$ARG"
+                    break
+                fi
+                if [[ "$ARG" != "--" ]] ; then
+                    SSH_ARGS+=("$ARG")
+                fi
+                if [[ "$ARG" == "-a" ]] ; then
+                    echo >&2 'warning: disabling SSH agent forwarding will prevent GPG agent forwarding from persisting on multiplexed connections'
+                fi
+                PREV_ARG="$ARG"
+            done
+        fi
+        if [[ -z "$HOST" ]] ; then
+            echo >&2 'error: when using SSH options and/or executing a remote command, you must use "--" between SSH arguments and hostname'
+            return 1
+        fi
+        local REMOTE_SOCKET="$(ssh -A "${SSH_ARGS[@]}" -- "$HOST" gpgconf -L agent-socket)"
+        if [[ -z "$REMOTE_SOCKET" ]] ; then
+            echo >&2 'error: failed to retrieve remote gnupg agent socket path'
+            return 1
+        fi
+        ssh -A -R "$REMOTE_SOCKET.forwarded:$([[ -S "$(gpgconf -L agent-extra-socket)" ]] && gpgconf -L agent-extra-socket || gpgconf -L agent-socket)" "$@"
+    }
 fi
 
 # Load color scheme for ls
