@@ -283,7 +283,7 @@ hash lesspipe &>/dev/null && eval "$(SHELL=/bin/sh lesspipe)"
 if hash man &>/dev/null ; then
     if hash batman &>/dev/null ; then
         alias man=batman
-    elif hash bat &>/dev/null && hash col &>/dev/null && [[ "$(head -c2 "$(command -v man 2>/dev/null)" 2>/dev/null)" == "#!" ]] ; then
+    elif hash bat col &>/dev/null && [[ "$(head -c2 "$(command -v man 2>/dev/null)" 2>/dev/null)" == "#!" ]] ; then
         export MANPAGER="sh -c 'col -bx | bat -l man -p'"
     fi
 fi
@@ -342,7 +342,7 @@ elif hash vi &>/dev/null ; then
 fi
 
 # Set up GnuPG
-if hash gpg &>/dev/null && hash gpgconf &>/dev/null ; then
+if hash gpg gpgconf &>/dev/null ; then
     # Ensure socket directories exist
     if [[ ! -d "$(gpgconf -L socketdir 2>/dev/null)" ]] && ! gpgconf -L socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
         gpgconf --create-socketdir &>/dev/null
@@ -541,7 +541,7 @@ if hash yay &>/dev/null && [[ "$(id -u)" == '0' ]] ; then
 fi
 
 # Convert codepage 437 characters used by nethack
-if hash nethack &>/dev/null && hash luit &>/dev/null ; then
+if hash nethack luit &>/dev/null ; then
     alias nethack="luit -encoding 'CP437' nethack"
 fi
 
@@ -584,6 +584,10 @@ if hash docker ip nsenter perl tcpflow &>/dev/null ; then
         exec sudo tcpflow -p -c -i "$(basename "$(dirname "$NETWORK_INTERFACE")")" -S enable_report=NO -e http tcp | grep -aE --line-buffered ".+($HTTP_VERBS|HTTP/[0-9.]+) |^[A-Za-z0-9-]+: " | perl -nle "BEGIN{\$|=1} { s/.*?($HTTP_VERBS|HTTP\\/[0-9.]+) /\\n\$1 /g; print }"
     }
 fi
+
+# Forget all previously remembered command locations
+# (We use `hash` for for checking command existance throughout this file, but we don't actually want them remembered)
+hash -r
 
 # Make sure the last command we execute here is successful so we do not
 # start each session with an prompt indicating the last command failed.
