@@ -35,6 +35,9 @@ map Q gq
 " Intuitive backspacing
 set backspace=indent,eol,start
 
+" Disable code folding by default
+set nofoldenable
+
 " Proper indentation
 set tabstop=4
 set shiftwidth=4
