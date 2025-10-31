@@ -443,42 +443,44 @@ if hash gpg gpgconf &>/dev/null ; then
     fi
 
     # Alias for forwarding GnuPG over SSH, to be used in combination with above forwarding support logic
-    ssh-forward-gpg() {
-        local SSH_ARGS=()
-        local HOST=""
-        if [[ $# -le 0 ]] ; then
-            echo >&2 "Usage: $FUNCNAME [[ssh-options ...] --] hostname [command [argument ...]]"
-            return 1
-        fi
-        if [[ $# -eq 1 ]] ; then
-            HOST="$1"
-        else
-            local PREV_ARG=""
-            for ARG in "$@" ; do
-                if [[ "$PREV_ARG" == "--" ]] ; then
-                    HOST="$ARG"
-                    break
-                fi
-                if [[ "$ARG" != "--" ]] ; then
-                    SSH_ARGS+=("$ARG")
-                fi
-                if [[ "$ARG" == "-a" ]] ; then
-                    echo >&2 'warning: disabling SSH agent forwarding will prevent GPG agent forwarding from persisting on multiplexed connections'
-                fi
-                PREV_ARG="$ARG"
-            done
-        fi
-        if [[ -z "$HOST" ]] ; then
-            echo >&2 'error: when using SSH options and/or executing a remote command, you must use "--" between SSH arguments and hostname'
-            return 1
-        fi
-        local REMOTE_SOCKET="$(ssh -A "${SSH_ARGS[@]}" -- "$HOST" gpgconf -L agent-socket)"
-        if [[ -z "$REMOTE_SOCKET" ]] ; then
-            echo >&2 'error: failed to retrieve remote gnupg agent socket path'
-            return 1
-        fi
-        ssh -A -R "$REMOTE_SOCKET.forwarded:$([[ -S "$(gpgconf -L agent-extra-socket)" ]] && gpgconf -L agent-extra-socket || gpgconf -L agent-socket)" "$@"
-    }
+    if [[ -S "$(gpgconf -L agent-extra-socket)" || -S "$(gpgconf -L agent-socket)" ]] ; then
+        ssh-forward-gpg() {
+            local SSH_ARGS=()
+            local HOST=""
+            if [[ $# -le 0 ]] ; then
+                echo >&2 "Usage: $FUNCNAME [[ssh-options ...] --] hostname [command [argument ...]]"
+                return 1
+            fi
+            if [[ $# -eq 1 ]] ; then
+                HOST="$1"
+            else
+                local PREV_ARG=""
+                for ARG in "$@" ; do
+                    if [[ "$PREV_ARG" == "--" ]] ; then
+                        HOST="$ARG"
+                        break
+                    fi
+                    if [[ "$ARG" != "--" ]] ; then
+                        SSH_ARGS+=("$ARG")
+                    fi
+                    if [[ "$ARG" == "-a" ]] ; then
+                        echo >&2 'warning: disabling SSH agent forwarding will prevent GPG agent forwarding from persisting on multiplexed connections'
+                    fi
+                    PREV_ARG="$ARG"
+                done
+            fi
+            if [[ -z "$HOST" ]] ; then
+                echo >&2 'error: when using SSH options and/or executing a remote command, you must use "--" between SSH arguments and hostname'
+                return 1
+            fi
+            local REMOTE_SOCKET="$(ssh -A "${SSH_ARGS[@]}" -- "$HOST" gpgconf -L agent-socket)"
+            if [[ -z "$REMOTE_SOCKET" ]] ; then
+                echo >&2 'error: failed to retrieve remote gnupg agent socket path'
+                return 1
+            fi
+            ssh -A -R "$REMOTE_SOCKET.forwarded:$([[ -S "$(gpgconf -L agent-extra-socket)" ]] && gpgconf -L agent-extra-socket || gpgconf -L agent-socket)" "$@"
+        }
+    fi
 fi
 
 # Load color scheme for ls
