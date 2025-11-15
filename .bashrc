@@ -344,7 +344,7 @@ fi
 # Set up GnuPG
 if hash gpg gpgconf &>/dev/null ; then
     # Ensure socket directories exist
-    if [[ ! -d "$(gpgconf -L socketdir 2>/dev/null)" ]] && ! gpgconf -L socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
+    if [[ ! -d "$(gpgconf --list-dirs socketdir 2>/dev/null)" ]] && ! gpgconf --list-dirs socketdir 2>/dev/null | grep -qE '^(/var)?/run/user/' ; then
         gpgconf --create-socketdir &>/dev/null
     fi
 
@@ -366,14 +366,14 @@ if hash gpg gpgconf &>/dev/null ; then
         WSLVERSION="$(/mnt/c/Windows/System32/wsl.exe --list --verbose | tr -d '\0\r' | awk -v wdn="$WSL_DISTRO_NAME" '$1=="*"&&$2=wdn{print $4}')"
         USERPROFILE="$(wslpath -a "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | sed -e 's/\r//g')" 2>/dev/null)"
 
-        if [[ ! -S "$(gpgconf -L agent-socket)" ]] ; then
+        if [[ ! -S "$(gpgconf --list-dirs agent-socket)" ]] ; then
             if hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl-relay.exe ]] ; then
                 # This uses https://github.com/Lexicality/wsl-relay
-                socat UNIX-LISTEN:"$(gpgconf -L agent-socket)",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
+                socat UNIX-LISTEN:"$(gpgconf --list-dirs agent-socket)",unlink-early,unlink-close,fork EXEC:'/mnt/c/Windows/wsl-relay.exe --input-closes --pipe-closes --gpg',nofork &>/dev/null &
                 disown $!
             elif hash socat &>/dev/null && [[ -x /mnt/c/Windows/wsl2-ssh-bridge.exe ]] ; then
                 # Fallback to using https://github.com/KerickHowlett/wsl2-ssh-bridge
-                socat UNIX-LISTEN:"$(gpgconf -L agent-socket)",unlink-early,unlink-close,fork EXEC:"/mnt/c/Windows/wsl2-ssh-bridge.exe --gpgConfigBasepath $USERPROFILE/AppData/Local/gnupg --gpg S.gpg-agent",nofork &>/dev/null &
+                socat UNIX-LISTEN:"$(gpgconf --list-dirs agent-socket)",unlink-early,unlink-close,fork EXEC:"/mnt/c/Windows/wsl2-ssh-bridge.exe --gpgConfigBasepath $USERPROFILE/AppData/Local/gnupg --gpg S.gpg-agent",nofork &>/dev/null &
                 disown $!
             fi
         fi
@@ -401,7 +401,7 @@ if hash gpg gpgconf &>/dev/null ; then
         fi
     else
         FORWARDED_GNUPGHOME=""
-        FORWARDED_SOCKET="$(gpgconf -L agent-socket).forwarded"
+        FORWARDED_SOCKET="$(gpgconf --list-dirs agent-socket).forwarded"
         if [[ -n "$SSH_AUTH_SOCK" && -S "$SSH_AUTH_SOCK" ]] && ! echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
             # Derive a deterministic location for the forwarded GnuPG agent based on SSH_AUTH_SOCK
             # (because that is persistent per SSH connection, also when using ControlMaster)
@@ -418,10 +418,10 @@ if hash gpg gpgconf &>/dev/null ; then
             if [[ ! -d "$FORWARDED_GNUPGHOME" ]] ; then
                 # Set up the new GnuPG by copying configuration from the default one
                 mv "$(mktemp -d)" "$FORWARDED_GNUPGHOME"
-                cp "$(gpgconf -L homedir)"/{{dirmngr,gpg,gpg-agent}.conf,pubring.kbx,trustdb.gpg} "$FORWARDED_GNUPGHOME/"
+                cp "$(gpgconf --list-dirs homedir)"/{{dirmngr,gpg,gpg-agent}.conf,pubring.kbx,trustdb.gpg} "$FORWARDED_GNUPGHOME/"
             fi
             export GNUPGHOME="$FORWARDED_GNUPGHOME"
-            mv "$FORWARDED_SOCKET" "$(gpgconf -L agent-socket)"
+            mv "$FORWARDED_SOCKET" "$(gpgconf --list-dirs agent-socket)"
         elif [[ -z "$GNUPGHOME" && -n "$FORWARDED_GNUPGHOME" && -d "$FORWARDED_GNUPGHOME" ]] ; then
             # Use the previously forwarded GnuPG agent
             export GNUPGHOME="$FORWARDED_GNUPGHOME"
@@ -438,12 +438,12 @@ if hash gpg gpgconf &>/dev/null ; then
 
         # Set up SSH agent support
         if [[ -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ]] || echo "$SSH_AUTH_SOCK" | grep -q 'com.apple.launchd' ; then
-            export SSH_AUTH_SOCK="$(gpgconf -L agent-ssh-socket)"
+            export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
         fi
     fi
 
     # Alias for forwarding GnuPG over SSH, to be used in combination with above forwarding support logic
-    if [[ -S "$(gpgconf -L agent-extra-socket)" || -S "$(gpgconf -L agent-socket)" ]] ; then
+    if [[ -S "$(gpgconf --list-dirs agent-extra-socket)" || -S "$(gpgconf --list-dirs agent-socket)" ]] ; then
         ssh-forward-gpg() {
             local SSH_ARGS=()
             local HOST=""
@@ -473,12 +473,12 @@ if hash gpg gpgconf &>/dev/null ; then
                 echo >&2 'error: when using SSH options and/or executing a remote command, you must use "--" between SSH arguments and hostname'
                 return 1
             fi
-            local REMOTE_SOCKET="$(ssh -A "${SSH_ARGS[@]}" -- "$HOST" gpgconf -L agent-socket)"
+            local REMOTE_SOCKET="$(ssh -A "${SSH_ARGS[@]}" -- "$HOST" gpgconf --list-dirs agent-socket)"
             if [[ -z "$REMOTE_SOCKET" ]] ; then
                 echo >&2 'error: failed to retrieve remote gnupg agent socket path'
                 return 1
             fi
-            ssh -A -R "$REMOTE_SOCKET.forwarded:$([[ -S "$(gpgconf -L agent-extra-socket)" ]] && gpgconf -L agent-extra-socket || gpgconf -L agent-socket)" "$@"
+            ssh -A -R "$REMOTE_SOCKET.forwarded:$([[ -S "$(gpgconf --list-dirs agent-extra-socket)" ]] && gpgconf --list-dirs agent-extra-socket || gpgconf --list-dirs agent-socket)" "$@"
         }
     fi
 fi
