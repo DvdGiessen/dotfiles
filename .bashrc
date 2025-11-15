@@ -492,15 +492,15 @@ if hash dircolors &>/dev/null ; then
     fi
 fi
 
-# Use colors in ls
+# Use colors in various commands
 if [[ "$OSTYPE" == "darwin"* ]] || [[ "$OSTYPE" == "freebsd"* ]] ; then
     alias ls='ls -G'
 else
     alias ls='ls --color=auto'
 fi
-
-# Use colors in grep
 alias grep='grep --color=auto'
+hash diff &>/dev/null && alias diff='diff --color=auto'
+hash ip &>/dev/null && alias ip='ip --color=auto'
 
 # Configure minicom: use Alt as Meta key, enable colors, enable linewrap
 export MINICOM='-m -c on -w'
